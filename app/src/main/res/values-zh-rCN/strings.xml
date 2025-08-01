@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DrawAnywhere</string>
+    <string name="permission_required">需要权限</string>
+    <string name="overlay_permission_description">此应用需要悬浮窗权限来在其他应用上绘制画布。</string>
+    <string name="permission_accept">继续</string>
+    <string name="permission_deny">退出</string>
+</resources>

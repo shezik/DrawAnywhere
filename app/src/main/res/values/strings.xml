@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">DrawAnywhere</string>
+    <string name="permission_required">Permission Required</string>
+    <string name="overlay_permission_description">This application needs overlay permission to draw the canvas on top of other apps.</string>
+    <string name="permission_accept">Proceed</string>
+    <string name="permission_deny">Exit</string>
+</resources>
