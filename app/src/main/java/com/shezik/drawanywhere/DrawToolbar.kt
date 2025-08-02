@@ -10,7 +10,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +39,7 @@ fun DrawToolbar(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(16.dp)
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
@@ -51,12 +54,12 @@ fun DrawToolbar(
                     }
                 )
             },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        shape = RoundedCornerShape(8.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+        shape = RoundedCornerShape(12.dp)
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // Canvas Controls Row
             CanvasControlsRow(
@@ -98,9 +101,9 @@ private fun CanvasControlsRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                text = if (canvasVisible) "Visible" else "Hidden",
-                fontSize = 14.sp
+            Icon(
+                imageVector = if (canvasVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                contentDescription = "Canvas visibility"
             )
             Switch(
                 checked = canvasVisible,
@@ -143,39 +146,31 @@ private fun PenControls(
     onAlphaChange: (Float) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Color Picker - More compact
+        // Color Picker
         ColorPicker(
             selectedColor = penConfig.color,
             onColorSelected = onColorChange
         )
 
-        // Compact sliders in a row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            // Stroke Width Slider
-            SliderControl(
-                label = "Width",
-                value = penConfig.width,
-                valueRange = 1f..20f,
-                onValueChange = onStrokeWidthChange,
-                valueDisplay = { "${it.toInt()}" },
-                modifier = Modifier.weight(1f)
-            )
+        // Stroke Width Slider
+        SliderControl(
+            label = "Stroke Width",
+            value = penConfig.width,
+            valueRange = 1f..50f,
+            onValueChange = onStrokeWidthChange,
+            valueDisplay = { "${it.toInt()}px" }
+        )
 
-            // Alpha Slider
-            SliderControl(
-                label = "Opacity",
-                value = penConfig.alpha,
-                valueRange = 0.1f..1f,
-                onValueChange = onAlphaChange,
-                valueDisplay = { "${(it * 100).toInt()}%" },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        // Alpha Slider
+        SliderControl(
+            label = "Opacity",
+            value = penConfig.alpha,
+            valueRange = 0.1f..1f,
+            onValueChange = onAlphaChange,
+            valueDisplay = { "${(it * 100).toInt()}%" }
+        )
     }
 }
 
@@ -192,14 +187,14 @@ private fun ColorPicker(
     Column {
         Text(
             text = "Color",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(colors.size) { index ->
                 val color = colors[index]
@@ -207,11 +202,11 @@ private fun ColorPicker(
 
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(color)
                         .border(
-                            width = if (isSelected) 2.dp else 1.dp,
+                            width = if (isSelected) 3.dp else 1.dp,
                             color = if (isSelected) MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.outline,
                             shape = CircleShape
@@ -229,10 +224,9 @@ private fun SliderControl(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     onValueChange: (Float) -> Unit,
-    valueDisplay: (Float) -> String,
-    modifier: Modifier = Modifier
+    valueDisplay: (Float) -> String
 ) {
-    Column(modifier = modifier) {
+    Column {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -240,7 +234,7 @@ private fun SliderControl(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Medium
             )
             Text(
