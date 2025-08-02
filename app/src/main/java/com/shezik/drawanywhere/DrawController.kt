@@ -1,15 +1,19 @@
 package com.shezik.drawanywhere
 
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import java.util.UUID
+
+data class PenConfig(
+    val color: Color = Color.Red,
+    val width: Float = 5f,
+    val alpha: Float = 1f
+)
 
 data class PathWrapper(
     val id: String = UUID.randomUUID().toString(),
@@ -31,6 +35,12 @@ data class PathWrapper(
 }
 
 class DrawController {
+    private lateinit var penConfig: PenConfig
+
+    fun setPenConfig(config: PenConfig) {
+        penConfig = config
+    }
+
     private val _pathList = mutableStateListOf<PathWrapper>()
     val pathList: List<PathWrapper>
         get() = _pathList
@@ -45,9 +55,9 @@ class DrawController {
     fun createPath(newPoint: Offset) {
         _pathList.add(PathWrapper(
             points = mutableStateListOf(newPoint),
-            color = Color.Red,  // TODO
-            width = 5f,         // TODO
-            alpha = 1f          // TODO
+            color = penConfig.color,
+            width = penConfig.width,
+            alpha = penConfig.alpha
         ))
     }
 
@@ -74,8 +84,7 @@ class DrawController {
             }
         }
     }
-}
 
-@Composable
-fun rememberDrawController(): DrawController =
-    remember { DrawController() }
+    fun clearPaths() =
+        _pathList.clear()
+}
