@@ -105,7 +105,7 @@ class DrawController {
 
     // One at a time.
     fun erasePath(point: Offset, eraserRadius: Float = 16f /* TODO */) {
-        var erasedPath: PathWrapper? = null
+        var indexToErase: Int? = null
 
         for (i in _pathList.indices.reversed()) {
             val pathWrapper = _pathList[i]
@@ -115,7 +115,7 @@ class DrawController {
                 pathWrapper.points.zipWithNext().forEach { (p1, p2) ->
                     val dist = distancePointToLineSegment(point, p1, p2)
                     if (dist <= compensatedRadius) {
-                        erasedPath = _pathList.removeAt(i)
+                        indexToErase = i
                         return@forEach
                     }
                 }
@@ -123,16 +123,17 @@ class DrawController {
                 pathWrapper.points.firstOrNull()?.let {
                     val dist = distance(point, it)
                     if (dist <= compensatedRadius) {
-                        erasedPath = _pathList.removeAt(i)
+                        indexToErase = i
                     }
                 }
             }
-            if (erasedPath != null) break
+            if (indexToErase != null) break
         }
 
-        erasedPath?.let {
-            addToUndoStack(DrawAction.ErasePath(it))
-            it.releasePath()
+        indexToErase?.let {
+            val erasedPath = _pathList.removeAt(it)
+            addToUndoStack(DrawAction.ErasePath(erasedPath))
+            erasedPath.releasePath()
             redoStack.clear()
         }
     }
