@@ -27,6 +27,7 @@ class DrawViewModel : ViewModel() {
 
     val canUndo: StateFlow<Boolean> = controller.canUndo
     val canRedo: StateFlow<Boolean> = controller.canRedo
+    val canClearCanvas: StateFlow<Boolean> = controller.canClearPaths
 
     init {
         viewModelScope.launch {

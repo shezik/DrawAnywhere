@@ -78,6 +78,9 @@ class DrawController {
     private val _canRedo = MutableStateFlow(false)
     val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
 
+    private val _canClear = MutableStateFlow(false)
+    val canClearPaths: StateFlow<Boolean> = _canClear.asStateFlow()
+
     fun updateLatestPath(newPoint: Offset) {
         _pathList.lastOrNull()?.let { latestPath ->
             latestPath.points.add(newPoint)
@@ -111,6 +114,7 @@ class DrawController {
         redoStack.clear()
         addToUndoStack(DrawAction.AddPath(latestPath))  // TODO: Is this a shallow copy? If so, we aren't touching its cachedPath.  // Undo/redo methods below depend on shallow copying.
         updateUndoRedoState()
+        updateClearPathsState()
     }
 
     // One at a time.
@@ -146,6 +150,7 @@ class DrawController {
             erasedPath.releasePath()
             redoStack.clear()
             updateUndoRedoState()
+            updateClearPathsState()
         }
     }
 
@@ -160,11 +165,16 @@ class DrawController {
         _pathList.clear()
         redoStack.clear()
         updateUndoRedoState()
+        updateClearPathsState()
     }
 
     private fun updateUndoRedoState() {
         _canUndo.value = undoStack.isNotEmpty()
         _canRedo.value = redoStack.isNotEmpty()
+    }
+
+    private fun updateClearPathsState() {
+        _canClear.value = _pathList.isNotEmpty()
     }
 
     private fun addToUndoStack(action: DrawAction) {
@@ -198,6 +208,7 @@ class DrawController {
             }
         }
         updateUndoRedoState()
+        updateClearPathsState()
     }
 
     fun redo() {
@@ -225,5 +236,6 @@ class DrawController {
             }
         }
         updateUndoRedoState()
+        updateClearPathsState()
     }
 }

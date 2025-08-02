@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -38,6 +38,7 @@ fun DrawToolbar(
     val uiState by viewModel.uiState.collectAsState()
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
+    val canClearCanvas by viewModel.canClearCanvas.collectAsState()
     val haptics = LocalHapticFeedback.current
 
     Card(
@@ -74,6 +75,7 @@ fun DrawToolbar(
                 onClearCanvas = { viewModel.controller.clearPaths() },
                 canUndo = canUndo,
                 canRedo = canRedo,
+                canClearCanvas = canClearCanvas,
                 onUndo = { viewModel.controller.undo() },
                 onRedo = { viewModel.controller.redo() }
             )
@@ -99,6 +101,7 @@ private fun CanvasControlsRow(
     onPassthroughToggle: (Boolean) -> Unit,
     canUndo: Boolean,
     canRedo: Boolean,
+    canClearCanvas: Boolean,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onClearCanvas: () -> Unit
@@ -159,12 +162,11 @@ private fun CanvasControlsRow(
         // Clear Button
         IconButton(
             onClick = onClearCanvas,
-            enabled = canvasVisible
+            enabled = canvasVisible and canClearCanvas
         ) {
             Icon(
-                imageVector = Icons.Default.Clear,
-                contentDescription = "Clear canvas",
-                tint = MaterialTheme.colorScheme.error
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Clear canvas"
             )
         }
     }
