@@ -19,13 +19,13 @@ data class PathWrapper(
     val id: String = UUID.randomUUID().toString(),  // TODO: Do we really need this?
     val points: SnapshotStateList<Offset>,
     private var _cachedPath: MutableState<Path?> = mutableStateOf(null),
-    private var cachedPathInvalid: Boolean = true,
+    private var cachedPathInvalid: MutableState<Boolean> = mutableStateOf(true),
     val color: Color,
     val width: Float,
     val alpha: Float
 ) {
     val cachedPath: Path get() =
-        if ((_cachedPath.value == null) or cachedPathInvalid)
+        if ((_cachedPath.value == null) or cachedPathInvalid.value)
             rebuildPath().value
         else
             _cachedPath.value!!
@@ -33,12 +33,12 @@ data class PathWrapper(
     @Suppress("UNCHECKED_CAST")
     private fun rebuildPath(): MutableState<Path> {  // TODO: Find a way to append points to the cached path instead of complete recalculation
         _cachedPath.value = pointsToPath(points)
-        cachedPathInvalid = false
+        cachedPathInvalid.value = false
         return _cachedPath as MutableState<Path>
     }
 
     fun invalidatePath() {
-        cachedPathInvalid = true
+        cachedPathInvalid.value = true
     }
 
     fun releasePath(): PathWrapper {
