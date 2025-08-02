@@ -19,11 +19,10 @@ fun Modifier.stylusAwareDrawing(
 
         val isEraser = initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
 
-        if (isEraser) {
+        if (isEraser)
             controller.erasePath(initialChange.position)
-        } else {
+        else
             controller.createPath(initialChange.position)
-        }
         initialChange.consume()
 
         while (true) {
