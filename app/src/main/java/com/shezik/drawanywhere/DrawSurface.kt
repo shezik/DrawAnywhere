@@ -9,16 +9,16 @@ import androidx.compose.ui.graphics.Color
 @Composable
 fun DrawSurface(
     modifier: Modifier = Modifier,
-    pathController: DrawPathController = rememberDrawPathController()
+    controller: DrawController = rememberDrawController()
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .stylusAwareDrawing(pathController)
+            .stylusAwareDrawing(controller)
     ) {
         DrawCanvas(
+            controller = controller,
             modifier = Modifier.fillMaxSize(),
-            pathController = pathController,
             backgroundColor = Color.Transparent
         )
     }
