@@ -1,7 +1,6 @@
 package com.shezik.drawanywhere
 
 import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isPrimaryPressed
@@ -12,35 +11,31 @@ fun Modifier.stylusAwareDrawing(
     controller: DrawController
 ): Modifier = pointerInput(Unit) {
     awaitEachGesture {
-        val initialDown = awaitFirstDown()
-
         val initialEvent = awaitPointerEvent()
-        val initialChange = initialEvent.changes.firstOrNull { it.id == initialDown.id }
+        val initialChange = initialEvent.changes.firstOrNull()
 
-        // Just maybe.
         if (initialChange == null || !initialChange.pressed)
             return@awaitEachGesture
 
-        val isEraser = initialDown.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
+        val isEraser = initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
 
         if (isEraser) {
-            // TODO: controller eraser method
+            controller.erasePath(initialChange.position)
         } else {
-            controller.createPath(initialDown.position)
-            controller.updateLatestPath(initialChange.position)
+            controller.createPath(initialChange.position)
         }
         initialChange.consume()
 
         while (true) {
             val event = awaitPointerEvent()
-            val change = event.changes.firstOrNull { it.id == initialDown.id }
+            val change = event.changes.firstOrNull { it.id == initialChange.id }
 
             if (change == null || !change.pressed)
                 break
 
             if (change.positionChanged()) {
                 if (isEraser) {
-                    // TODO: controller eraser method
+                    controller.erasePath(change.position)
                 } else {
                     controller.updateLatestPath(change.position)
                 }
