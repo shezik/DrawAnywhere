@@ -8,7 +8,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 
 fun Modifier.stylusAwareDrawing(
-    controller: DrawController
+    pathController: DrawPathController
 ): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val initialEvent = awaitPointerEvent()
@@ -20,9 +20,9 @@ fun Modifier.stylusAwareDrawing(
         val isEraser = initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
 
         if (isEraser) {
-            controller.erasePath(initialChange.position)
+            pathController.erasePath(initialChange.position)
         } else {
-            controller.createPath(initialChange.position)
+            pathController.createPath(initialChange.position)
         }
         initialChange.consume()
 
@@ -35,9 +35,9 @@ fun Modifier.stylusAwareDrawing(
 
             if (change.positionChanged()) {
                 if (isEraser) {
-                    controller.erasePath(change.position)
+                    pathController.erasePath(change.position)
                 } else {
-                    controller.updateLatestPath(change.position)
+                    pathController.updateLatestPath(change.position)
                 }
                 change.consume()
             }

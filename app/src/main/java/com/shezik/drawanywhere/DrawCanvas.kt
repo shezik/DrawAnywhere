@@ -12,12 +12,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 
 @Composable
 fun DrawCanvas(
-    controller: DrawController,
     modifier: Modifier,
+    pathController: DrawPathController,
     backgroundColor: Color = MaterialTheme.colorScheme.background
 ) {
-//    val pathList by remember { derivedStateOf { controller.pathList } }
-    val pathList = controller.pathList
+    val pathList = pathController.pathList
 
     Canvas(
         modifier.background(backgroundColor)

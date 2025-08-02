@@ -30,7 +30,7 @@ data class PathWrapper(
     }
 }
 
-class DrawController {
+class DrawPathController {
     private val _pathList = mutableStateListOf<PathWrapper>()
     val pathList: List<PathWrapper>
         get() = _pathList
@@ -77,5 +77,5 @@ class DrawController {
 }
 
 @Composable
-fun rememberDrawController(): DrawController =
-    remember { DrawController() }
+fun rememberDrawPathController(): DrawPathController =
+    remember { DrawPathController() }
