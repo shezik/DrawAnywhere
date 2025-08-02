@@ -9,6 +9,8 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -34,6 +36,8 @@ fun DrawToolbar(
 ) {
     // Collect the UI state - this automatically recomposes when state changes
     val uiState by viewModel.uiState.collectAsState()
+    val canUndo by viewModel.canUndo.collectAsState()
+    val canRedo by viewModel.canRedo.collectAsState()
     val haptics = LocalHapticFeedback.current
 
     Card(
@@ -67,7 +71,11 @@ fun DrawToolbar(
                 canvasPassthrough = uiState.canvasPassthrough,
                 onVisibilityToggle = viewModel::setCanvasVisible,
                 onPassthroughToggle = viewModel::setCanvasPassthrough,
-                onClearCanvas = { viewModel.controller.clearPaths() }
+                onClearCanvas = { viewModel.controller.clearPaths() },
+                canUndo = canUndo,
+                canRedo = canRedo,
+                onUndo = { viewModel.controller.undo() },
+                onRedo = { viewModel.controller.redo() }
             )
 
             HorizontalDivider()
@@ -89,6 +97,10 @@ private fun CanvasControlsRow(
     canvasPassthrough: Boolean,
     onVisibilityToggle: (Boolean) -> Unit,
     onPassthroughToggle: (Boolean) -> Unit,
+    canUndo: Boolean,
+    canRedo: Boolean,
+    onUndo: () -> Unit,
+    onRedo: () -> Unit,
     onClearCanvas: () -> Unit
 ) {
     Row(
@@ -121,6 +133,26 @@ private fun CanvasControlsRow(
                 checked = canvasPassthrough,
                 onCheckedChange = onPassthroughToggle,
                 enabled = canvasVisible
+            )
+        }
+
+        IconButton(
+            onClick = onUndo,
+            enabled = canvasVisible and canUndo
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Undo,
+                contentDescription = "Undo"
+            )
+        }
+
+        IconButton(
+            onClick = onRedo,
+            enabled = canvasVisible and canRedo
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.Redo,
+                contentDescription = "Redo"
             )
         }
 

@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class UIState(
+data class UiState(
     val canvasVisible: Boolean = true,
     val canvasPassthrough: Boolean = false,
     val penConfig: PenConfig = PenConfig(),
@@ -22,8 +22,11 @@ data class UIState(
 class DrawViewModel : ViewModel() {
     val controller = DrawController()
 
-    private val _uiState = MutableStateFlow(UIState())
-    val uiState: StateFlow<UIState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(UiState())
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    val canUndo: StateFlow<Boolean> = controller.canUndo
+    val canRedo: StateFlow<Boolean> = controller.canRedo
 
     init {
         viewModelScope.launch {
@@ -31,6 +34,7 @@ class DrawViewModel : ViewModel() {
                 // TODO: Save penConfig to preferences, excluding toolbarPosition. Actually, don't save anything when toolbarPosition changes.
                 controller.setPenConfig(state.penConfig)
             }
+//            controller.setPenConfig(_uiState.value.penConfig)  // TODO: ?
         }
     }
 
@@ -62,7 +66,7 @@ class DrawViewModel : ViewModel() {
         _uiState.update { it.copy(toolbarPosition = position) }
 
     fun saveToolbarPosition() {
-
+        // TODO: Save toolbarPosition to preferences
     }
 }
 

@@ -7,6 +7,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
 data class PenConfig(
@@ -69,6 +72,12 @@ class DrawController {
     private val undoStack = mutableListOf<DrawAction>()
     private val redoStack = mutableListOf<DrawAction>()
 
+    private val _canUndo = MutableStateFlow(false)
+    val canUndo: StateFlow<Boolean> = _canUndo.asStateFlow()
+
+    private val _canRedo = MutableStateFlow(false)
+    val canRedo: StateFlow<Boolean> = _canRedo.asStateFlow()
+
     fun updateLatestPath(newPoint: Offset) {
         _pathList.lastOrNull()?.let { latestPath ->
             latestPath.points.add(newPoint)
@@ -86,7 +95,6 @@ class DrawController {
             width = penConfig.width,
             alpha = penConfig.alpha
         ))
-        redoStack.clear()
     }
 
     fun finishPath() {
@@ -100,7 +108,9 @@ class DrawController {
             return
         }
 
+        redoStack.clear()
         addToUndoStack(DrawAction.AddPath(latestPath))  // TODO: Is this a shallow copy? If so, we aren't touching its cachedPath.  // Undo/redo methods below depend on shallow copying.
+        updateUndoRedoState()
     }
 
     // One at a time.
@@ -135,6 +145,7 @@ class DrawController {
             addToUndoStack(DrawAction.ErasePath(erasedPath))
             erasedPath.releasePath()
             redoStack.clear()
+            updateUndoRedoState()
         }
     }
 
@@ -148,10 +159,13 @@ class DrawController {
         addToUndoStack(DrawAction.ClearPaths(_pathList.toList()))
         _pathList.clear()
         redoStack.clear()
+        updateUndoRedoState()
     }
 
-    fun canUndo(): Boolean = undoStack.isNotEmpty()
-    fun canRedo(): Boolean = redoStack.isNotEmpty()
+    private fun updateUndoRedoState() {
+        _canUndo.value = undoStack.isNotEmpty()
+        _canRedo.value = redoStack.isNotEmpty()
+    }
 
     private fun addToUndoStack(action: DrawAction) {
         undoStack.add(action)
@@ -183,6 +197,7 @@ class DrawController {
                 redoStack.add(action)
             }
         }
+        updateUndoRedoState()
     }
 
     fun redo() {
@@ -209,5 +224,6 @@ class DrawController {
                 addToUndoStack(action)
             }
         }
+        updateUndoRedoState()
     }
 }
