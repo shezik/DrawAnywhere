@@ -12,24 +12,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 
-private fun calculateMidpoint(start: Offset, end: Offset) =
-    Offset((start.x + end.x) / 2, (start.y + end.y) / 2)
-
-private fun pointsToPath(points: List<Offset>) = Path().apply {
-    if (points.size < 2)
-        return@apply
-
-    moveTo(points.first().x, points.first().y)
-    points.zipWithNext().forEachIndexed { index, (start, end) ->
-        val mid = calculateMidpoint(start, end)
-        if (index == 0)
-            lineTo(mid.x, mid.y)
-        else
-            quadraticTo(start.x, start.y, mid.x, mid.y)
-    }
-    lineTo(points.last().x, points.last().y)
-}
-
 @Composable
 fun DrawCanvas(
     controller: DrawController,
@@ -43,9 +25,8 @@ fun DrawCanvas(
         modifier.background(backgroundColor)
     ) {
         pathList.forEach { pathWrapper ->
-            // TODO: Find a way to cache calculated paths
             drawPath(
-                path = pointsToPath(pathWrapper.points),
+                path = pathWrapper.cachedPath,
                 color = pathWrapper.color,
                 alpha = pathWrapper.alpha,
                 style = Stroke(
