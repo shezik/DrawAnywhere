@@ -17,28 +17,38 @@ fun Modifier.stylusAwareDrawing(
         if (initialChange == null || !initialChange.pressed)
             return@awaitEachGesture
 
-        val isEraser = initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
+        var pathCreated = false
+        val isEraser =
+            initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
 
         if (isEraser)
             controller.erasePath(initialChange.position)
-        else
+        else {
             controller.createPath(initialChange.position)
+            pathCreated = true
+        }
         initialChange.consume()
 
-        while (true) {
-            val event = awaitPointerEvent()
-            val change = event.changes.firstOrNull { it.id == initialChange.id }
+        try {
+            while (true) {
+                val event = awaitPointerEvent()
+                val change = event.changes.firstOrNull { it.id == initialChange.id }
 
-            if (change == null || !change.pressed)
-                break
+                if (change == null || !change.pressed)
+                    break
 
-            if (change.positionChanged()) {
-                if (isEraser) {
-                    controller.erasePath(change.position)
-                } else {
-                    controller.updateLatestPath(change.position)
+                if (change.positionChanged()) {
+                    if (isEraser) {
+                        controller.erasePath(change.position)
+                    } else {
+                        controller.updateLatestPath(change.position)
+                    }
+                    change.consume()
                 }
-                change.consume()
+            }
+        } finally {
+            if (pathCreated) {
+                controller.finishPath()
             }
         }
     }
