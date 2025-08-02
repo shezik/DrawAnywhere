@@ -11,24 +11,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import java.util.UUID
 
-private fun calculateMidpoint(start: Offset, end: Offset) =
-    Offset((start.x + end.x) / 2, (start.y + end.y) / 2)
-
-private fun pointsToPath(points: List<Offset>) = Path().apply {
-    if (points.size < 2)
-        return@apply
-
-    moveTo(points.first().x, points.first().y)
-    points.zipWithNext().forEachIndexed { index, (start, end) ->
-        val mid = calculateMidpoint(start, end)
-        if (index == 0)
-            lineTo(mid.x, mid.y)
-        else
-            quadraticTo(start.x, start.y, mid.x, mid.y)
-    }
-    lineTo(points.last().x, points.last().y)
-}
-
 data class PathWrapper(
     val id: String = UUID.randomUUID().toString(),
     val points: SnapshotStateList<Offset>,
@@ -67,6 +49,30 @@ class DrawController {
             width = 5f,         // TODO
             alpha = 1f          // TODO
         ))
+    }
+
+    fun erasePath(point: Offset, eraserRadius: Float = 16f /* TODO */) {
+        for (i in _pathList.indices.reversed()) {
+            val pathWrapper = _pathList[i]
+            val compensatedRadius = pathWrapper.width / 2 + eraserRadius
+
+            pathWrapper.points.zipWithNext().forEach { (p1, p2) ->
+                val dist = distancePointToLineSegment(point, p1, p2)
+                if (dist <= compensatedRadius) {
+                    _pathList.removeAt(i)
+                    return
+                }
+            }
+
+            // In case the path contains only one point
+            pathWrapper.points.firstOrNull()?.let {
+                val dist = distance(point, it)
+                if (dist <= compensatedRadius) {
+                    _pathList.removeAt(i)
+                    return
+                }
+            }
+        }
     }
 }
 
