@@ -28,7 +28,8 @@ class MainService : Service() {
     private lateinit var windowManager: WindowManager
     private lateinit var canvasView: View
     private lateinit var toolbarView: View
-    private val viewModel = DrawViewModel()
+    private val drawController = DrawController()
+    private val viewModel = DrawViewModel(drawController)
 
     override fun onCreate() {
         super.onCreate()
@@ -44,8 +45,8 @@ class MainService : Service() {
             setContent {
                 DrawCanvas(
                     modifier = Modifier.fillMaxSize()
-                        .stylusAwareDrawing(controller = viewModel.controller),
-                    controller = viewModel.controller,
+                        .stylusAwareDrawing(viewModel = viewModel),
+                    controller = drawController,
                     backgroundColor = Color.Transparent
                 )
             }

@@ -4,11 +4,16 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerType
 import androidx.compose.ui.input.pointer.isPrimaryPressed
+import androidx.compose.ui.input.pointer.isSecondaryPressed
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
 
+enum class StrokeModifier {
+    None, PrimaryButton, SecondaryButton, Both
+}
+
 fun Modifier.stylusAwareDrawing(
-    controller: DrawController
+    viewModel: DrawViewModel
 ): Modifier = pointerInput(Unit) {
     awaitEachGesture {
         val initialEvent = awaitPointerEvent()
@@ -17,16 +22,15 @@ fun Modifier.stylusAwareDrawing(
         if (initialChange == null || !initialChange.pressed)
             return@awaitEachGesture
 
-        var pathCreated = false
-        val isEraser =
-            initialChange.type == PointerType.Stylus && initialEvent.buttons.isPrimaryPressed
-
-        if (isEraser)
-            controller.erasePath(initialChange.position)
-        else {
-            controller.createPath(initialChange.position)
-            pathCreated = true
+        val strokeModifier = when {
+            initialChange.type != PointerType.Stylus -> StrokeModifier.None
+            initialEvent.buttons.isPrimaryPressed && initialEvent.buttons.isSecondaryPressed -> StrokeModifier.Both
+            initialEvent.buttons.isPrimaryPressed -> StrokeModifier.PrimaryButton
+            initialEvent.buttons.isSecondaryPressed -> StrokeModifier.SecondaryButton
+            else -> StrokeModifier.None
         }
+
+        viewModel.startStroke(initialChange.position, strokeModifier)
         initialChange.consume()
 
         try {
@@ -38,18 +42,12 @@ fun Modifier.stylusAwareDrawing(
                     break
 
                 if (change.positionChanged()) {
-                    if (isEraser) {
-                        controller.erasePath(change.position)
-                    } else {
-                        controller.updateLatestPath(change.position)
-                    }
+                    viewModel.updateStroke(change.position)
                     change.consume()
                 }
             }
         } finally {
-            if (pathCreated) {
-                controller.finishPath()
-            }
+            viewModel.finishStroke()
         }
     }
 }

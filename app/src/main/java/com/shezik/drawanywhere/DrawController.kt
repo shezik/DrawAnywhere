@@ -12,7 +12,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.UUID
 
+enum class PenType {
+    Pen, StrokeEraser, /*PixelEraser*/  // TODO
+}
+
 data class PenConfig(
+    val penType: PenType = PenType.Pen,
     val color: Color = Color.Red,
     val width: Float = 5f,
     val alpha: Float = 1f
@@ -82,6 +87,11 @@ class DrawController {
     val canClearPaths: StateFlow<Boolean> = _canClear.asStateFlow()
 
     fun updateLatestPath(newPoint: Offset) {
+        if (penConfig.penType == PenType.StrokeEraser) {
+            erasePath(newPoint)
+            return
+        }
+
         _pathList.lastOrNull()?.let { latestPath ->
             latestPath.points.add(newPoint)
             latestPath.invalidatePath()
@@ -90,7 +100,12 @@ class DrawController {
 
     fun createPath(newPoint: Offset) {
         if (!this::penConfig.isInitialized)
-            throw IllegalStateException("PenConfig used without initialization")
+            throw IllegalStateException("PenConfig used without initialization!")
+
+        if (penConfig.penType == PenType.StrokeEraser) {
+            erasePath(newPoint)
+            return
+        }
 
         _pathList.add(PathWrapper(
             points = mutableStateListOf(newPoint),
@@ -101,8 +116,8 @@ class DrawController {
     }
 
     fun finishPath() {
-        if (_pathList.isEmpty())
-            return
+        if (penConfig.penType == PenType.StrokeEraser) return
+        if (_pathList.isEmpty()) return
 
         val latestPath = _pathList.last()
 
@@ -117,8 +132,9 @@ class DrawController {
         updateClearPathsState()
     }
 
-    // One at a time.
-    fun erasePath(point: Offset, eraserRadius: Float = 16f /* TODO */) {
+    // Erase one path at a time.
+    private fun erasePath(point: Offset) {
+        val eraserRadius = penConfig.width / 2
         var indexToErase: Int? = null
 
         for (i in _pathList.indices.reversed()) {
@@ -155,8 +171,7 @@ class DrawController {
     }
 
     fun clearPaths() {
-        if (_pathList.isEmpty())
-            return
+        if (_pathList.isEmpty()) return
 
         _pathList.forEach {
             it.releasePath()

@@ -34,12 +34,13 @@ fun DrawToolbar(
     viewModel: DrawViewModel,
     modifier: Modifier = Modifier
 ) {
-    // Collect the UI state - this automatically recomposes when state changes
     val uiState by viewModel.uiState.collectAsState()
     val canUndo by viewModel.canUndo.collectAsState()
     val canRedo by viewModel.canRedo.collectAsState()
     val canClearCanvas by viewModel.canClearCanvas.collectAsState()
     val haptics = LocalHapticFeedback.current
+    val currentPenType = uiState.currentPenType
+    val currentPenConfig = uiState.currentPenConfig
 
     Card(
         modifier = modifier
@@ -66,25 +67,30 @@ fun DrawToolbar(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Canvas Controls Row
             CanvasControlsRow(
                 canvasVisible = uiState.canvasVisible,
                 canvasPassthrough = uiState.canvasPassthrough,
                 onVisibilityToggle = viewModel::setCanvasVisible,
                 onPassthroughToggle = viewModel::setCanvasPassthrough,
-                onClearCanvas = { viewModel.controller.clearPaths() },
+                onClearCanvas = { viewModel.clearCanvas() },
                 canUndo = canUndo,
                 canRedo = canRedo,
                 canClearCanvas = canClearCanvas,
-                onUndo = { viewModel.controller.undo() },
-                onRedo = { viewModel.controller.redo() }
+                onUndo = { viewModel.undo() },
+                onRedo = { viewModel.redo() }
             )
 
             HorizontalDivider()
 
-            // Pen Controls
+            PenTypeToggleRow(
+                current = currentPenType,
+                onSwitch = viewModel::switchToPen
+            )
+
+            HorizontalDivider()
+
             PenControls(
-                penConfig = uiState.penConfig,
+                penConfig = currentPenConfig,
                 onColorChange = viewModel::setPenColor,
                 onStrokeWidthChange = viewModel::setStrokeWidth,
                 onAlphaChange = viewModel::setStrokeAlpha
@@ -284,5 +290,49 @@ private fun SliderControl(
             valueRange = valueRange,
             modifier = Modifier.fillMaxWidth()
         )
+    }
+}
+
+@Composable
+private fun PenTypeToggleRow(
+    current: PenType,
+    onSwitch: (PenType) -> Unit
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        PenToggleButton(
+            label = "Pen",
+            selected = current == PenType.Pen,
+            onClick = { onSwitch(PenType.Pen) }
+        )
+        PenToggleButton(
+            label = "Eraser",
+            selected = current == PenType.StrokeEraser,
+            onClick = { onSwitch(PenType.StrokeEraser) }
+        )
+    }
+}
+
+@Composable
+private fun PenToggleButton(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val backgroundColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant
+    val contentColor = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = backgroundColor,
+            contentColor = contentColor
+        ),
+//        modifier = Modifier.weight(1f)
+    ) {
+        Text(label)
     }
 }
