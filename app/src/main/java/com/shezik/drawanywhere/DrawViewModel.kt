@@ -15,7 +15,21 @@ data class UiState(
     val canvasPassthrough: Boolean = false,
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
-    val toolbarPosition: Offset = Offset(0f, 0f)  // TODO: Read penConfig and toolbarPosition from preferences
+    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
+
+    // New properties for sleek toolbar
+    val toolbarExpanded: Boolean = true,
+    val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
+
+    // Optional: For future button customization
+    val enabledButtons: Set<String> = setOf(
+        "visibility", "passthrough", "undo", "redo", "clear",
+        "pen_type", "color_picker", "pen_controls"
+    ),
+    val buttonOrder: List<String> = listOf(
+        "visibility", "passthrough", "undo", "redo", "clear",
+        "pen_type", "color_picker", "pen_controls"
+    )
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified
@@ -140,4 +154,83 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
     fun clearCanvas() = controller.clearPaths()
     fun undo() = controller.undo()
     fun redo() = controller.redo()
+
+    fun setToolbarExpanded(expanded: Boolean) {
+        _uiState.update { it.copy(toolbarExpanded = expanded) }
+    }
+
+    fun setToolbarOrientation(orientation: ToolbarOrientation) {
+        _uiState.update { it.copy(toolbarOrientation = orientation) }
+    }
+
+    // Optional: For future button customization
+    fun setEnabledButtons(buttons: Set<String>) {
+        _uiState.update { it.copy(enabledButtons = buttons) }
+    }
+
+    fun setButtonOrder(order: List<String>) {
+        _uiState.update { it.copy(buttonOrder = order) }
+    }
+
+    fun toggleButton(buttonId: String) {
+        val currentEnabled = _uiState.value.enabledButtons
+        val newEnabled = if (currentEnabled.contains(buttonId)) {
+            currentEnabled - buttonId
+        } else {
+            currentEnabled + buttonId
+        }
+        setEnabledButtons(newEnabled)
+    }
+
+    // Enhanced save/restore methods
+    fun saveToolbarState() {
+        val state = _uiState.value
+        // Save to preferences - integrate with your existing preferences system
+        // preferences.putBoolean("toolbar_expanded", state.toolbarExpanded)
+        // preferences.putString("toolbar_orientation", state.lastToolbarOrientation?.name)
+        // preferences.putStringSet("enabled_buttons", state.enabledButtons)
+        // preferences.putString("button_order", state.buttonOrder.joinToString(","))
+    }
+
+    fun restoreToolbarState() {
+        // Restore from preferences - integrate with your existing preferences system
+        // val expanded = preferences.getBoolean("toolbar_expanded", true)
+        // val orientation = preferences.getString("toolbar_orientation", null)
+        //     ?.let { ToolbarOrientation.valueOf(it) }
+        // val enabledButtons = preferences.getStringSet("enabled_buttons", null)
+        //     ?: setOf("visibility", "passthrough", "undo", "redo", "clear",
+        //              "pen_type", "color_picker", "pen_controls")
+        // val buttonOrder = preferences.getString("button_order", "")
+        //     .split(",").filter { it.isNotEmpty() }
+        //     .takeIf { it.isNotEmpty() }
+        //     ?: listOf("visibility", "passthrough", "undo", "redo", "clear",
+        //               "pen_type", "color_picker", "pen_controls")
+
+        // _uiState.update {
+        //     it.copy(
+        //         toolbarExpanded = expanded,
+        //         lastToolbarOrientation = orientation,
+        //         enabledButtons = enabledButtons,
+        //         buttonOrder = buttonOrder
+        //     )
+        // }
+    }
+
+//    fun onToolbarEvent(event: ToolbarEvent) {
+//        when (event) {
+//            is ToolbarEvent.ChangeAlpha -> setStrokeAlpha(event.alpha)
+//            is ToolbarEvent.ChangeColor -> setPenColor(event.color)
+//            is ToolbarEvent.ChangeStrokeWidth -> setStrokeWidth(event.width)
+//            is ToolbarEvent.ClearCanvas -> clearCanvas()
+//            is ToolbarEvent.PositionChange -> setToolbarPosition(event.position)
+//            is ToolbarEvent.PositionChangeFinished -> saveToolbarPosition()
+//            is ToolbarEvent.Redo -> redo()
+//            is ToolbarEvent.SetOrientation -> setToolbarOrientation(event.orientation)
+//            is ToolbarEvent.SwitchPenType -> switchToPen(event.penType)
+//            is ToolbarEvent.ToggleExpanded -> setToolbarExpanded(event.isExpanded)
+//            is ToolbarEvent.TogglePassthrough -> setCanvasPassthrough(!uiState.value.canvasPassthrough)
+//            is ToolbarEvent.ToggleVisibility -> setCanvasVisible(!uiState.value.canvasVisible)
+//            is ToolbarEvent.Undo -> undo()
+//        }
+//    }
 }
