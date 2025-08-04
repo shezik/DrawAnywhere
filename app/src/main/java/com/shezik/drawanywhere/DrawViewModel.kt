@@ -11,11 +11,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class UiState(
+    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
     val canvasVisible: Boolean = true,
     val canvasPassthrough: Boolean = false,
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
-    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
 
     // New properties for sleek toolbar
     val toolbarExpanded: Boolean = true,

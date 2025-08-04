@@ -7,9 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -90,11 +87,9 @@ fun DrawToolbar(
 
     val allButtons = createAllToolbarButtons(
         uiState = uiState,
-        isToolbarExpanded = isToolbarExpanded,
         canUndo = canUndo,
         canRedo = canRedo,
         canClearCanvas = canClearCanvas,
-//        orientation = orientation,
         onCanvasVisibilityToggle = viewModel::setCanvasVisible,
         onCanvasPassthroughToggle = viewModel::setCanvasPassthrough,
         onClearCanvas = viewModel::clearCanvas,
@@ -104,14 +99,11 @@ fun DrawToolbar(
         onColorChange = viewModel::setPenColor,
         onStrokeWidthChange = viewModel::setStrokeWidth,
         onAlphaChange = viewModel::setStrokeAlpha,
-        onExpandToggleClick = { viewModel.setToolbarExpanded(!isToolbarExpanded) }
     )
 
     // Root composable
     DraggableToolbarCard(
         modifier = modifier
-            // Leave space for cardElevation in AnimatedToolbarContainer
-            // Should be as small as possible since user can't start a stroke on the toolbar
             .padding(5.dp),
         uiState = uiState,
         haptics = haptics,
@@ -184,99 +176,132 @@ private fun ToolbarButtonsContainer(
         ToolbarOrientation.VERTICAL -> Alignment.CenterEnd
     }
 
+    val alwaysVisibleButtons = remember(buttons) {
+        buttons.filter { it.isAlwaysVisible }
+    }
+    val expandableButtons = remember(buttons) {
+        buttons.filter { !it.isAlwaysVisible }
+    }
+
+    // Animate the size of the container holding the expandable buttons
+    val animatedContentSize = Modifier.animateContentSize(
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
+    )
+
     when (orientation) {
         ToolbarOrientation.HORIZONTAL -> {
             Row(
                 modifier = modifier,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // 使用 LazyRow 来显示其他按钮
-                LazyRow(
-                    // 确保 LazyRow 不会占用所有可用空间
-                    modifier = Modifier.weight(1f, fill = false),
-                    // 这里用 Arrangement.spacedBy 是可以的，因为 LazyRow 内部的动画机制不同
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Always visible buttons
+                Row(
+                    horizontalArrangement = arrangement,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false) // Allow it to shrink if needed
                 ) {
-                    items(
-                        items = buttons,
-                        // 关键！key 能帮助 LazyRow 识别哪个是哪个，从而实现正确的动画
-                        key = { it.id }
-                    ) { button ->
-                        // animateItemPlacement() 是一个重要的修饰符，它能让元素在列表中的位置变化时（例如，因为其他元素消失）产生动画
-                        RenderButton(button, popupAlignment, Modifier.animateItem())
+                    alwaysVisibleButtons.forEach { button ->
+                        RenderButton(button, popupAlignment)
                     }
                 }
 
-//                ToolbarExpandButton(
-//                    modifier = Modifier.padding(horizontal = 4.dp), // 同样给它一个padding
-//                    isExpanded = isToolbarExpanded,
-//                    onClick = onExpandToggleClick
-//                )
+                AnimatedVisibility(
+                    modifier = Modifier
+                        .padding(arrangement.spacing),
+                    visible = expandableButtons.isNotEmpty() && isToolbarExpanded,
+                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                ) {
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(24.dp),
+                        thickness = 2.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    )
+                }
+
+                // Expandable buttons
+                Row(
+                    modifier = Modifier.then(animatedContentSize), // Apply animatedContentSize here
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = arrangement
+                ) {
+                    // Iterate and apply AnimatedVisibility to each expandable button
+                    expandableButtons.forEach { button ->
+                        AnimatedVisibility(
+                            visible = isToolbarExpanded,
+                            // Use scaleIn/Out for a cleaner circular appearance during animation
+                            // No need for slide as animateContentSize handles position change
+                            enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                            exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                        ) {
+                            // The modifier passed to RenderButton will include the size and circular clip
+                            RenderButton(button, popupAlignment)
+                        }
+                    }
+                }
+
+                ToolbarExpandButton(
+                    modifier = Modifier.padding(start = 8.dp),
+                    isExpanded = isToolbarExpanded,
+                    onClick = onExpandToggleClick
+                )
             }
         }
         ToolbarOrientation.VERTICAL -> {
             Column(
                 modifier = modifier,
-//                verticalArrangement = arrangement,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 使用 LazyRow 来显示其他按钮
-                LazyColumn (
-                    // 确保 LazyRow 不会占用所有可用空间
-                    modifier = Modifier.weight(1f, fill = false),
-                    // 这里用 Arrangement.spacedBy 是可以的，因为 LazyRow 内部的动画机制不同
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                // Always visible buttons
+                Column(
+                    verticalArrangement = arrangement,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f, fill = false) // Allow it to shrink if needed
                 ) {
-                    items(
-                        items = buttons,
-                        // 关键！key 能帮助 LazyRow 识别哪个是哪个，从而实现正确的动画
-                        key = { it.id }
-                    ) { button ->
-                        // animateItemPlacement() 是一个重要的修饰符，它能让元素在列表中的位置变化时（例如，因为其他元素消失）产生动画
-                        RenderButton(button, popupAlignment, Modifier.animateItem())
+                    alwaysVisibleButtons.forEach { button ->
+                        RenderButton(button, popupAlignment)
                     }
                 }
 
-//                ToolbarExpandButton(
-//                    modifier = Modifier.padding(horizontal = 4.dp), // 同样给它一个padding
-//                    isExpanded = isToolbarExpanded,
-//                    onClick = onExpandToggleClick
-//                )
-            }
-        }
-    }
-}
+                AnimatedVisibility(
+                    modifier = Modifier
+                        .padding(arrangement.spacing),
+                    visible = expandableButtons.isNotEmpty() && isToolbarExpanded,
+                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                ) {
+                    VerticalDivider(
+                        modifier = Modifier
+                            .height(24.dp),
+                        thickness = 2.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                    )
+                }
 
-@Composable
-private fun ToolbarButtons(
-    buttons: List<ToolbarButton>,
-    isToolbarExpanded: Boolean,
-    onExpandToggleClick: () -> Unit,
-    popupAlignment: Alignment,
-    orientation: ToolbarOrientation
-) {
-    buttons.filter { it.isVisible }.forEach { button ->
-        when {
-            button.id == "expand_toggle" -> {
+                // Expandable buttons
+                Column(
+                    modifier = Modifier.then(animatedContentSize), // Apply animatedContentSize here
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = arrangement
+                ) {
+                    // Iterate and apply AnimatedVisibility to each expandable button
+                    expandableButtons.forEach { button ->
+                        AnimatedVisibility(
+                            visible = isToolbarExpanded,
+                            // Use scaleIn/Out for a cleaner circular appearance during animation
+                            enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                            exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                        ) {
+                            // The modifier passed to RenderButton will include the size and circular clip
+                            RenderButton(button, popupAlignment)
+                        }
+                    }
+                }
+
                 ToolbarExpandButton(
-                    modifier = Modifier,
+                    modifier = Modifier.padding(top = 8.dp),
                     isExpanded = isToolbarExpanded,
                     onClick = onExpandToggleClick
                 )
-            }
-            !button.isAlwaysVisible -> {
-                AnimatedVisibility(
-                    visible = isToolbarExpanded,
-                    enter = expandAnimation(orientation),
-                    exit = collapseAnimation(orientation)
-                ) {
-                    RenderButton(button, popupAlignment)
-                }
-            }
-            else -> {
-                RenderButton(button, popupAlignment)
             }
         }
     }
@@ -286,13 +311,13 @@ private fun ToolbarButtons(
 private fun RenderButton(button: ToolbarButton, popupAlignment: Alignment, modifier: Modifier = Modifier) {
     if (button.isExpandable) {
         ExpandableToolbarButton(
-            modifier = modifier, // 👈 传递 modifier
+            modifier = modifier,
             button = button,
             popupAlignment = popupAlignment
         )
     } else {
         AnimatedToolbarButton(
-            modifier = modifier, // 👈 传递 modifier
+            modifier = modifier,
             button = button
         )
     }
@@ -313,13 +338,13 @@ private fun ToolbarExpandButton(
     IconButton(
         onClick = onClick,
         modifier = modifier
-            .size(40.dp)
+//            .size(40.dp)
             .background(
                 color = if (isExpanded)
                     MaterialTheme.colorScheme.primaryContainer
                 else
-                    MaterialTheme.colorScheme.surface,
-                shape = CircleShape
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                shape = CircleShape // Apply CircleShape here for background
             )
     ) {
         Icon(
@@ -346,12 +371,14 @@ private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
         onClick = button.onClick ?: {},
         enabled = button.isEnabled,
         modifier = modifier
-            .size(40.dp)
-            .graphicsLayer { scaleX = scale; scaleY = scale }
+//            .size(40.dp)
+            // Apply clip and graphicsLayer after size for correct visual effects
+            .graphicsLayer { scaleX = scale; scaleY = scale } // Apply scaling to the whole button
             .background(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                shape = CircleShape
+                shape = CircleShape // This applies the circular background and clips it
             )
+        // No need for a separate .clip(CircleShape) if background has shape
     ) {
         Icon(
             imageVector = button.icon,
@@ -377,13 +404,13 @@ private fun ExpandableToolbarButton(
             onClick = { isExpanded = !isExpanded },
             enabled = button.isEnabled,
             modifier = Modifier
-                .size(40.dp)
+//                .size(40.dp)
                 .background(
                     color = if (isExpanded)
                         MaterialTheme.colorScheme.primaryContainer
                     else
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                    shape = CircleShape
+                    shape = CircleShape // Apply CircleShape here for background
                 )
         ) {
             Icon(
@@ -492,7 +519,7 @@ private fun ColorSwatchButton(
         modifier = Modifier
             .size(24.dp)
             .graphicsLayer { scaleX = scale; scaleY = scale }
-            .clip(CircleShape)
+            .clip(CircleShape) // Ensure clipping is applied to the box
             .background(color)
             .border(
                 width = if (isSelected) 2.dp else 1.dp,
@@ -527,15 +554,16 @@ private fun ColorPicker(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        LazyColumn(
+        // Using regular Column/Row for color swatches
+        Column(
             verticalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.width(120.dp)
         ) {
-            items(colors.chunked(4)) { colorRow ->
-                LazyRow(
+            colors.chunked(4).forEach { colorRow ->
+                Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    items(colorRow) { color ->
+                    colorRow.forEach { color ->
                         ColorSwatchButton(
                             color = color,
                             isSelected = color.toArgb() == selectedColor.toArgb(),
@@ -620,7 +648,6 @@ private fun SliderControl(
 
 private fun createAllToolbarButtons(
     uiState: UiState,
-    isToolbarExpanded: Boolean,
     canUndo: Boolean,
     canRedo: Boolean,
     canClearCanvas: Boolean,
@@ -633,54 +660,53 @@ private fun createAllToolbarButtons(
     onColorChange: (Color) -> Unit,
     onStrokeWidthChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
-    onExpandToggleClick: () -> Unit
 ): List<ToolbarButton> {
-    return buildList {
-        add(ToolbarButton(
+    return listOf(
+        ToolbarButton(
             id = "visibility",
             icon = if (uiState.canvasVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
             contentDescription = if (uiState.canvasVisible) "Hide canvas" else "Show canvas",
             onClick = { onCanvasVisibilityToggle(!uiState.canvasVisible) },
             isAlwaysVisible = true
-        ))
+        ),
 
-        if (isToolbarExpanded) add(ToolbarButton(
+        ToolbarButton(
             id = "passthrough",
             icon = Icons.Default.TouchApp,
             contentDescription = "Toggle passthrough",
             isEnabled = uiState.canvasVisible,
             onClick = { onCanvasPassthroughToggle(!uiState.canvasPassthrough) },
             isAlwaysVisible = false
-        ))
+        ),
 
-        add(ToolbarButton(
+        ToolbarButton(
             id = "undo",
             icon = Icons.AutoMirrored.Filled.Undo,
             contentDescription = "Undo",
             isEnabled = uiState.canvasVisible && canUndo,
             onClick = onUndo,
             isAlwaysVisible = true
-        ))
+        ),
 
-        if (isToolbarExpanded) add(ToolbarButton(
+        ToolbarButton(
             id = "redo",
             icon = Icons.AutoMirrored.Filled.Redo,
             contentDescription = "Redo",
             isEnabled = uiState.canvasVisible && canRedo,
             onClick = onRedo,
             isAlwaysVisible = false
-        ))
+        ),
 
-        add(ToolbarButton(
+        ToolbarButton(
             id = "clear",
             icon = Icons.Default.Delete,
             contentDescription = "Clear canvas",
             isEnabled = uiState.canvasVisible && canClearCanvas,
             onClick = onClearCanvas,
             isAlwaysVisible = true
-        ))
+        ),
 
-        add(ToolbarButton(
+        ToolbarButton(
             id = "pen_type",
             icon = when (uiState.currentPenType) {
                 PenType.Pen -> Icons.Default.Edit
@@ -694,9 +720,9 @@ private fun createAllToolbarButtons(
                 )
             },
             isAlwaysVisible = true
-        ))
+        ),
 
-        add(ToolbarButton(
+        ToolbarButton(
             id = "color_picker",
             icon = Icons.Default.Palette,
             contentDescription = "Color picker",
@@ -707,9 +733,9 @@ private fun createAllToolbarButtons(
                 )
             },
             isAlwaysVisible = true
-        ))
+        ),
 
-        if (isToolbarExpanded) add(ToolbarButton(
+        ToolbarButton(
             id = "pen_controls",
             icon = Icons.Default.Tune,
             contentDescription = "Pen settings",
@@ -721,36 +747,6 @@ private fun createAllToolbarButtons(
                 )
             },
             isAlwaysVisible = false
-        ))
-
-        add(ToolbarButton(
-            id = "expand_toggle",
-            icon = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = "Toggle toolbar expansion",
-            onClick = onExpandToggleClick,
-            isAlwaysVisible = true
-        ))
-    }
-}
-
-private fun expandAnimation(orientation: ToolbarOrientation): EnterTransition {
-    return when (orientation) {
-        ToolbarOrientation.HORIZONTAL -> slideInHorizontally(
-            animationSpec = tween(300, easing = FastOutSlowInEasing)
-        ) { -it } + fadeIn(animationSpec = tween(300))
-        ToolbarOrientation.VERTICAL -> slideInVertically(
-            animationSpec = tween(300, easing = FastOutSlowInEasing)
-        ) { -it } + fadeIn(animationSpec = tween(300))
-    }
-}
-
-private fun collapseAnimation(orientation: ToolbarOrientation): ExitTransition {
-    return when (orientation) {
-        ToolbarOrientation.HORIZONTAL -> slideOutHorizontally(
-            animationSpec = tween(300, easing = FastOutSlowInEasing)
-        ) { -it } + fadeOut(animationSpec = tween(300))
-        ToolbarOrientation.VERTICAL -> slideOutVertically(
-            animationSpec = tween(300, easing = FastOutSlowInEasing)
-        ) { -it } + fadeOut(animationSpec = tween(300))
-    }
+        )
+    )
 }
