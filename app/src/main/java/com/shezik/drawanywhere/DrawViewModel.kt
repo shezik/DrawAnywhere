@@ -11,25 +11,27 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class UiState(
-    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
     val canvasVisible: Boolean = true,
     val canvasPassthrough: Boolean = false,
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
 
-    // New properties for sleek toolbar
-    val toolbarExpanded: Boolean = true,
+    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
     val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
 
-    // Optional: For future button customization
-    val enabledButtons: Set<String> = setOf(
-        "visibility", "passthrough", "undo", "redo", "clear",
-        "pen_type", "color_picker", "pen_controls"
+    val firstDrawerOpen: Boolean = !canvasPassthrough,
+    val secondDrawerOpen: Boolean = false,
+
+    // Second drawer expand/collapse button is UI-specific, we don't (and shouldn't) see it here
+    // Buttons that don't appear in either list do not belong to drawers
+    val firstDrawerButtons: Set<String> = setOf(
+        "undo", "clear", "pen_type", "color_picker"
     ),
-    val buttonOrder: List<String> = listOf(
-        "visibility", "passthrough", "undo", "redo", "clear",
-        "pen_type", "color_picker", "pen_controls"
-    )
+    val secondDrawerButtons: Set<String> = setOf(
+        "passthrough", "redo", "pen_config"
+    ),
+    // Buttons that stay in second drawer but do not collapse
+    val secondDrawerPinnedButtons: Set<String> = setOf()
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified
@@ -155,31 +157,52 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
     fun undo() = controller.undo()
     fun redo() = controller.redo()
 
-    fun setToolbarExpanded(expanded: Boolean) {
-        _uiState.update { it.copy(toolbarExpanded = expanded) }
-    }
-
     fun setToolbarOrientation(orientation: ToolbarOrientation) {
         _uiState.update { it.copy(toolbarOrientation = orientation) }
     }
 
-    // Optional: For future button customization
-    fun setEnabledButtons(buttons: Set<String>) {
-        _uiState.update { it.copy(enabledButtons = buttons) }
+    private fun setEnabledButtons(buttons: Set<String>) {
+        // TODO: For preferences
     }
 
-    fun setButtonOrder(order: List<String>) {
-        _uiState.update { it.copy(buttonOrder = order) }
+    private fun setButtonOrder(order: List<String>) {
+        // TODO: For preferences
     }
 
-    fun toggleButton(buttonId: String) {
-        val currentEnabled = _uiState.value.enabledButtons
-        val newEnabled = if (currentEnabled.contains(buttonId)) {
-            currentEnabled - buttonId
-        } else {
-            currentEnabled + buttonId
-        }
-        setEnabledButtons(newEnabled)
+    fun toggleButtonEnabled(buttonId: String) {
+        // TODO
+//        val currentEnabled = _uiState.value.enabledButtons
+//        val newEnabled = if (currentEnabled.contains(buttonId)) {
+//            currentEnabled - buttonId
+//        } else {
+//            currentEnabled + buttonId
+//        }
+//        setEnabledButtons(newEnabled)
+    }
+
+    fun toggleFirstDrawer() {
+        _uiState.update { it.copy(firstDrawerOpen = !it.firstDrawerOpen) }
+    }
+
+    fun setFirstDrawerExpanded(state: Boolean) {
+        _uiState.update { it.copy(firstDrawerOpen = state) }
+    }
+
+    fun toggleSecondDrawer() {
+        _uiState.update { it.copy(secondDrawerOpen = !it.secondDrawerOpen) }
+    }
+
+    fun pinSecondDrawerButton(id: String, pinned: Boolean) {
+        val currentPinned = _uiState.value.secondDrawerPinnedButtons
+        if (currentPinned.contains(id) == pinned)
+            return
+
+        val newPinned = if (pinned)
+            currentPinned + id
+        else
+            currentPinned - id
+
+        _uiState.update { it.copy(secondDrawerPinnedButtons = newPinned) }
     }
 
     // Enhanced save/restore methods
@@ -199,12 +222,12 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
         //     ?.let { ToolbarOrientation.valueOf(it) }
         // val enabledButtons = preferences.getStringSet("enabled_buttons", null)
         //     ?: setOf("visibility", "passthrough", "undo", "redo", "clear",
-        //              "pen_type", "color_picker", "pen_controls")
+        //              "pen_type", "color_picker", "pen_config")
         // val buttonOrder = preferences.getString("button_order", "")
         //     .split(",").filter { it.isNotEmpty() }
         //     .takeIf { it.isNotEmpty() }
         //     ?: listOf("visibility", "passthrough", "undo", "redo", "clear",
-        //               "pen_type", "color_picker", "pen_controls")
+        //               "pen_type", "color_picker", "pen_config")
 
         // _uiState.update {
         //     it.copy(

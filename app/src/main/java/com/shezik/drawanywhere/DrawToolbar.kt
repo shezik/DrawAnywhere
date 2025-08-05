@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -27,6 +28,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,13 +59,11 @@ data class ToolbarButton(
     val icon: ImageVector,
     val contentDescription: String,
     val isEnabled: Boolean = true,
-    val isVisible: Boolean = true,
-    val isAlwaysVisible: Boolean = false,
     val onClick: (() -> Unit)? = null,
-    val expandableContent: (@Composable () -> Unit)? = null
+    val popupContent: (@Composable () -> Unit)? = null
 ) {
-    val isExpandable: Boolean
-        get() = expandableContent != null
+    val hasPopup: Boolean
+        get() = popupContent != null
 }
 
 enum class ToolbarOrientation {
@@ -80,18 +80,21 @@ fun DrawToolbar(
     val canRedo by viewModel.canRedo.collectAsState()
     val canClearCanvas by viewModel.canClearCanvas.collectAsState()
 
-    val orientation = uiState.toolbarOrientation
-    val isToolbarExpanded = uiState.toolbarExpanded
-
     val haptics = LocalHapticFeedback.current
 
-    val allButtons = createAllToolbarButtons(
+    val allButtonsMap = createAllToolbarButtons(
         uiState = uiState,
         canUndo = canUndo,
         canRedo = canRedo,
         canClearCanvas = canClearCanvas,
-        onCanvasVisibilityToggle = viewModel::setCanvasVisible,
-        onCanvasPassthroughToggle = viewModel::setCanvasPassthrough,
+        onCanvasVisibilityToggle = { state: Boolean ->
+            viewModel.setCanvasVisible(state)
+            viewModel.setFirstDrawerExpanded(state)  // TODO
+        },
+        onCanvasPassthroughToggle = { state: Boolean ->
+            viewModel.setCanvasPassthrough(state)
+            viewModel.pinSecondDrawerButton("passthrough", state)  // TODO
+        },
         onClearCanvas = viewModel::clearCanvas,
         onUndo = viewModel::undo,
         onRedo = viewModel::redo,
@@ -99,11 +102,13 @@ fun DrawToolbar(
         onColorChange = viewModel::setPenColor,
         onStrokeWidthChange = viewModel::setStrokeWidth,
         onAlphaChange = viewModel::setStrokeAlpha,
-    )
+    ).associateBy { it.id }
 
     // Root composable
     DraggableToolbarCard(
         modifier = modifier
+            // Leave space for defaultElevation shadows, should be as small as possible
+            // since user can't start a stroke on the outer padding.
             .padding(5.dp),
         uiState = uiState,
         haptics = haptics,
@@ -111,11 +116,10 @@ fun DrawToolbar(
         onPositionSaved = viewModel::saveToolbarPosition
     ) {
         ToolbarButtonsContainer(
-            modifier = Modifier.padding(8.dp),  // Padding for the overall button group
-            buttons = allButtons,
-            orientation = orientation,
-            isToolbarExpanded = isToolbarExpanded,
-            onExpandToggleClick = { viewModel.setToolbarExpanded(!isToolbarExpanded) }
+            modifier = Modifier.padding(8.dp),
+            uiState = uiState,
+            allButtonsMap = allButtonsMap,
+            onExpandToggleClick = viewModel::toggleSecondDrawer
         )
     }
 }
@@ -165,22 +169,26 @@ private fun DraggableToolbarCard(
 @Composable
 private fun ToolbarButtonsContainer(
     modifier: Modifier = Modifier,
-    buttons: List<ToolbarButton>,
-    orientation: ToolbarOrientation,
-    isToolbarExpanded: Boolean,
+    uiState: UiState,
+    allButtonsMap: Map<String, ToolbarButton>,
     onExpandToggleClick: () -> Unit
 ) {
+    val orientation = uiState.toolbarOrientation
+    val isFirstDrawerOpen = uiState.firstDrawerOpen
+    val isSecondDrawerOpen = uiState.secondDrawerOpen
+    val firstDrawerButtonIds = uiState.firstDrawerButtons
+    val secondDrawerButtonIds = uiState.secondDrawerButtons
+    val secondDrawerPinnedButtons = uiState.secondDrawerPinnedButtons
+
+    val standaloneButtonIds = allButtonsMap.keys.filter {
+        it !in firstDrawerButtonIds &&
+        it !in secondDrawerButtonIds
+    }
+
     val arrangement = Arrangement.spacedBy(8.dp)
     val popupAlignment = when (orientation) {
         ToolbarOrientation.HORIZONTAL -> Alignment.TopCenter
         ToolbarOrientation.VERTICAL -> Alignment.CenterEnd
-    }
-
-    val alwaysVisibleButtons = remember(buttons) {
-        buttons.filter { it.isAlwaysVisible }
-    }
-    val expandableButtons = remember(buttons) {
-        buttons.filter { !it.isAlwaysVisible }
     }
 
     // Animate the size of the container holding the expandable buttons
@@ -189,119 +197,141 @@ private fun ToolbarButtonsContainer(
     )
 
     when (orientation) {
+        // TODO: REMEMBER TO SYNC VERTICAL CODE WITH HORIZONTAL CODE
+        // TODO: HORIZONTAL CODE IS THE MOST ACCURATE
         ToolbarOrientation.HORIZONTAL -> {
             Row(
-                modifier = modifier,
+                modifier = modifier.then(animatedContentSize),
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = arrangement
             ) {
-                // Always visible buttons
-                Row(
-                    horizontalArrangement = arrangement,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f, fill = false) // Allow it to shrink if needed
-                ) {
-                    alwaysVisibleButtons.forEach { button ->
+                standaloneButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    RenderButton(button, popupAlignment)
+                }
+
+                firstDrawerButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    AnimatedVisibility(
+                        visible = isFirstDrawerOpen,
+                        enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                        exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    ) {
                         RenderButton(button, popupAlignment)
                     }
                 }
 
+                val isDividerVisible = isFirstDrawerOpen && (
+                        secondDrawerPinnedButtons.isNotEmpty()
+                                || (isSecondDrawerOpen && secondDrawerButtonIds.isNotEmpty())
+                        )
                 AnimatedVisibility(
-                    modifier = Modifier
-                        .padding(arrangement.spacing),
-                    visible = expandableButtons.isNotEmpty() && isToolbarExpanded,
-                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
-                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    visible = isDividerVisible,
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(300))
                 ) {
                     VerticalDivider(
                         modifier = Modifier
-                            .height(24.dp),
-                        thickness = 2.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            .height(24.dp)
+                            .padding(horizontal = 8.dp),
+                        thickness = 2.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                     )
                 }
 
-                // Expandable buttons
-                Row(
-                    modifier = Modifier.then(animatedContentSize), // Apply animatedContentSize here
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = arrangement
-                ) {
-                    // Iterate and apply AnimatedVisibility to each expandable button
-                    expandableButtons.forEach { button ->
-                        AnimatedVisibility(
-                            visible = isToolbarExpanded,
-                            // Use scaleIn/Out for a cleaner circular appearance during animation
-                            // No need for slide as animateContentSize handles position change
-                            enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
-                            exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
-                        ) {
-                            // The modifier passed to RenderButton will include the size and circular clip
-                            RenderButton(button, popupAlignment)
-                        }
+                secondDrawerButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    val isVisible = isFirstDrawerOpen && (isSecondDrawerOpen || buttonId in secondDrawerPinnedButtons)
+
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                        exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    ) {
+                        RenderButton(button, popupAlignment)
                     }
                 }
 
-                ToolbarExpandButton(
-                    modifier = Modifier.padding(start = 8.dp),
-                    isExpanded = isToolbarExpanded,
-                    onClick = onExpandToggleClick
-                )
+                val isExpandButtonVisible = isFirstDrawerOpen && secondDrawerButtonIds.isNotEmpty()
+                AnimatedVisibility(
+                    visible = isExpandButtonVisible,
+                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                ) {
+                    ToolbarExpandButton(
+                        modifier = Modifier,
+                        isExpanded = isSecondDrawerOpen,
+                        onClick = onExpandToggleClick
+                    )
+                }
             }
         }
+
         ToolbarOrientation.VERTICAL -> {
             Column(
                 modifier = modifier,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = arrangement
             ) {
-                // Always visible buttons
-                Column(
-                    verticalArrangement = arrangement,
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f, fill = false) // Allow it to shrink if needed
-                ) {
-                    alwaysVisibleButtons.forEach { button ->
+                standaloneButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    RenderButton(button, popupAlignment)
+                }
+
+                firstDrawerButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    AnimatedVisibility(
+                        visible = isFirstDrawerOpen,
+                        enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                        exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    ) {
                         RenderButton(button, popupAlignment)
                     }
                 }
 
+                val isDividerVisible = isFirstDrawerOpen && (
+                        secondDrawerPinnedButtons.isNotEmpty()
+                                || (isSecondDrawerOpen && secondDrawerButtonIds.isNotEmpty())
+                        )
                 AnimatedVisibility(
-                    modifier = Modifier
-                        .padding(arrangement.spacing),
-                    visible = expandableButtons.isNotEmpty() && isToolbarExpanded,
-                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
-                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    visible = isDividerVisible,
+                    enter = fadeIn(tween(300)),
+                    exit = fadeOut(tween(300))
                 ) {
-                    VerticalDivider(
+                    HorizontalDivider(
                         modifier = Modifier
-                            .height(24.dp),
-                        thickness = 2.dp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                            .width(24.dp)
+                            .padding(horizontal = 8.dp),
+                        thickness = 2.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                     )
                 }
 
-                // Expandable buttons
-                Column(
-                    modifier = Modifier.then(animatedContentSize), // Apply animatedContentSize here
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = arrangement
-                ) {
-                    // Iterate and apply AnimatedVisibility to each expandable button
-                    expandableButtons.forEach { button ->
-                        AnimatedVisibility(
-                            visible = isToolbarExpanded,
-                            // Use scaleIn/Out for a cleaner circular appearance during animation
-                            enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
-                            exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
-                        ) {
-                            // The modifier passed to RenderButton will include the size and circular clip
-                            RenderButton(button, popupAlignment)
-                        }
+                secondDrawerButtonIds.forEach { buttonId ->
+                    val button = allButtonsMap[buttonId] ?: return@forEach
+                    val isVisible = isFirstDrawerOpen && (isSecondDrawerOpen || buttonId in secondDrawerPinnedButtons)
+
+                    AnimatedVisibility(
+                        visible = isVisible,
+                        enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                        exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                    ) {
+                        RenderButton(button, popupAlignment)
                     }
                 }
 
-                ToolbarExpandButton(
-                    modifier = Modifier.padding(top = 8.dp),
-                    isExpanded = isToolbarExpanded,
-                    onClick = onExpandToggleClick
-                )
+                val isExpandButtonVisible = isFirstDrawerOpen && secondDrawerButtonIds.isNotEmpty()
+                AnimatedVisibility(
+                    visible = isExpandButtonVisible,
+                    enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
+                    exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.5f)
+                ) {
+                    ToolbarExpandButton(
+                        modifier = Modifier,
+                        isExpanded = isSecondDrawerOpen,
+                        onClick = onExpandToggleClick
+                    )
+                }
             }
         }
     }
@@ -309,8 +339,8 @@ private fun ToolbarButtonsContainer(
 
 @Composable
 private fun RenderButton(button: ToolbarButton, popupAlignment: Alignment, modifier: Modifier = Modifier) {
-    if (button.isExpandable) {
-        ExpandableToolbarButton(
+    if (button.hasPopup) {
+        PopupToolbarButton(
             modifier = modifier,
             button = button,
             popupAlignment = popupAlignment
@@ -344,7 +374,7 @@ private fun ToolbarExpandButton(
                     MaterialTheme.colorScheme.primaryContainer
                 else
                     MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                shape = CircleShape // Apply CircleShape here for background
+                shape = CircleShape  // Apply CircleShape here for background
             )
     ) {
         Icon(
@@ -392,21 +422,21 @@ private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
 }
 
 @Composable
-private fun ExpandableToolbarButton(
+private fun PopupToolbarButton(
     modifier: Modifier,
     button: ToolbarButton,
     popupAlignment: Alignment
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isPopupOpen by remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
         IconButton(
-            onClick = { isExpanded = !isExpanded },
+            onClick = { isPopupOpen = !isPopupOpen },
             enabled = button.isEnabled,
             modifier = Modifier
 //                .size(40.dp)
                 .background(
-                    color = if (isExpanded)
+                    color = if (isPopupOpen)
                         MaterialTheme.colorScheme.primaryContainer
                     else
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
@@ -416,7 +446,7 @@ private fun ExpandableToolbarButton(
             Icon(
                 imageVector = button.icon,
                 contentDescription = button.contentDescription,
-                tint = if (isExpanded)
+                tint = if (isPopupOpen)
                     MaterialTheme.colorScheme.onPrimaryContainer
                 else if (button.isEnabled)
                     MaterialTheme.colorScheme.onSurface
@@ -425,7 +455,7 @@ private fun ExpandableToolbarButton(
             )
         }
 
-        if (isExpanded) {
+        if (isPopupOpen) {
             Popup(
                 alignment = popupAlignment,
                 offset = when (popupAlignment) {
@@ -433,7 +463,7 @@ private fun ExpandableToolbarButton(
                     Alignment.CenterEnd -> androidx.compose.ui.unit.IntOffset(60, 0)
                     else -> androidx.compose.ui.unit.IntOffset(0, 0)
                 },
-                onDismissRequest = { isExpanded = false },
+                onDismissRequest = { isPopupOpen = false },
                 properties = PopupProperties(focusable = true)
             ) {
                 Card(
@@ -445,7 +475,7 @@ private fun ExpandableToolbarButton(
                     )
                 ) {
                     Box(modifier = Modifier.padding(16.dp)) {
-                        button.expandableContent?.invoke()
+                        button.popupContent?.invoke()
                     }
                 }
             }
@@ -666,17 +696,7 @@ private fun createAllToolbarButtons(
             id = "visibility",
             icon = if (uiState.canvasVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
             contentDescription = if (uiState.canvasVisible) "Hide canvas" else "Show canvas",
-            onClick = { onCanvasVisibilityToggle(!uiState.canvasVisible) },
-            isAlwaysVisible = true
-        ),
-
-        ToolbarButton(
-            id = "passthrough",
-            icon = Icons.Default.TouchApp,
-            contentDescription = "Toggle passthrough",
-            isEnabled = uiState.canvasVisible,
-            onClick = { onCanvasPassthroughToggle(!uiState.canvasPassthrough) },
-            isAlwaysVisible = false
+            onClick = { onCanvasVisibilityToggle(!uiState.canvasVisible) }
         ),
 
         ToolbarButton(
@@ -684,17 +704,7 @@ private fun createAllToolbarButtons(
             icon = Icons.AutoMirrored.Filled.Undo,
             contentDescription = "Undo",
             isEnabled = uiState.canvasVisible && canUndo,
-            onClick = onUndo,
-            isAlwaysVisible = true
-        ),
-
-        ToolbarButton(
-            id = "redo",
-            icon = Icons.AutoMirrored.Filled.Redo,
-            contentDescription = "Redo",
-            isEnabled = uiState.canvasVisible && canRedo,
-            onClick = onRedo,
-            isAlwaysVisible = false
+            onClick = onUndo
         ),
 
         ToolbarButton(
@@ -702,8 +712,7 @@ private fun createAllToolbarButtons(
             icon = Icons.Default.Delete,
             contentDescription = "Clear canvas",
             isEnabled = uiState.canvasVisible && canClearCanvas,
-            onClick = onClearCanvas,
-            isAlwaysVisible = true
+            onClick = onClearCanvas
         ),
 
         ToolbarButton(
@@ -713,40 +722,53 @@ private fun createAllToolbarButtons(
                 PenType.StrokeEraser -> Icons.Default.Delete
             },
             contentDescription = "Tool selector",
-            expandableContent = {
+            popupContent = {
                 PenTypeSelector(
                     currentPenType = uiState.currentPenType,
                     onPenTypeSwitch = onPenTypeSwitch
                 )
-            },
-            isAlwaysVisible = true
+            }
         ),
 
         ToolbarButton(
             id = "color_picker",
             icon = Icons.Default.Palette,
             contentDescription = "Color picker",
-            expandableContent = {
+            popupContent = {
                 ColorPicker(
                     selectedColor = uiState.currentPenConfig.color,
                     onColorSelected = onColorChange
                 )
-            },
-            isAlwaysVisible = true
+            }
         ),
 
         ToolbarButton(
-            id = "pen_controls",
+            id = "passthrough",
+            icon = Icons.Default.TouchApp,
+            contentDescription = "Toggle passthrough",
+            isEnabled = uiState.canvasVisible,
+            onClick = { onCanvasPassthroughToggle(!uiState.canvasPassthrough) }
+        ),
+
+        ToolbarButton(
+            id = "redo",
+            icon = Icons.AutoMirrored.Filled.Redo,
+            contentDescription = "Redo",
+            isEnabled = uiState.canvasVisible && canRedo,
+            onClick = onRedo
+        ),
+
+        ToolbarButton(
+            id = "pen_config",
             icon = Icons.Default.Tune,
             contentDescription = "Pen settings",
-            expandableContent = {
+            popupContent = {
                 PenControls(
                     penConfig = uiState.currentPenConfig,
                     onStrokeWidthChange = onStrokeWidthChange,
                     onAlphaChange = onAlphaChange
                 )
-            },
-            isAlwaysVisible = false
+            }
         )
     )
 }
