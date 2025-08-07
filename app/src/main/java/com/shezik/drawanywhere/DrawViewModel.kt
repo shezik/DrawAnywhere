@@ -4,6 +4,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,6 +18,7 @@ data class UiState(
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
 
+    val toolbarActive: Boolean = true,
     val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
     val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
 
@@ -62,6 +65,7 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
                 controller.setPenConfig(state.currentPenConfig)
             }
         }
+        resetToolbarTimer()
     }
 
     fun switchToPen(type: PenType) =
@@ -179,6 +183,22 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
     fun clearCanvas() = controller.clearPaths()
     fun undo() = controller.undo()
     fun redo() = controller.redo()
+
+
+
+    private var dimmingJob: Job? = null
+
+    fun resetToolbarTimer() {
+        dimmingJob?.cancel()
+        setToolbarActive(true)
+        dimmingJob = viewModelScope.launch {
+            delay(3000L)  // 5 seconds
+            setToolbarActive(false)
+        }
+    }
+
+    fun setToolbarActive(state: Boolean) =
+        _uiState.update { it.copy(toolbarActive = state) }
 
 
 

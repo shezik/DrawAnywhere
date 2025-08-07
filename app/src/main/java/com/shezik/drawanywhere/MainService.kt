@@ -103,6 +103,12 @@ class MainService : Service() {
                 canvasView.visibility = if (state.canvasVisible)
                     View.VISIBLE else View.GONE
 
+                val targetAlpha = if (state.toolbarActive) 1.0f else 0.5f
+                toolbarView.animate()
+                    .alpha(targetAlpha)
+                    .setDuration(500)  // Animate alpha change over 500 milliseconds
+                    .start()
+
                 // Toolbar position
                 toolbarParams.x = state.toolbarPosition.x.toInt()
                 toolbarParams.y = state.toolbarPosition.y.toInt()

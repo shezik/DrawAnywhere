@@ -41,7 +41,6 @@ import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 
 // TODO: Use toggle methods in ViewModel, modifiers (esp. size) unification
 
-// Unified button data class
 data class ToolbarButton(
     val id: String,
     val icon: ImageVector,
@@ -107,7 +106,8 @@ fun DrawToolbar(
             uiState = uiState,
             haptics = haptics,
             onPositionChange = viewModel::setToolbarPosition,
-            onPositionSaved = viewModel::saveToolbarPosition
+            onPositionSaved = viewModel::saveToolbarPosition,
+            onToolbarInteracted = viewModel::resetToolbarTimer
         ) {
             ToolbarButtonsContainer(
                 modifier = Modifier.padding(8.dp),
@@ -126,6 +126,7 @@ private fun DraggableToolbarCard(
     haptics: HapticFeedback,
     onPositionChange: (Offset) -> Unit,
     onPositionSaved: () -> Unit,
+    onToolbarInteracted: () -> Unit,
     content: @Composable () -> Unit
 ) {
     var currentPosition by remember { mutableStateOf(uiState.toolbarPosition) }
@@ -136,6 +137,14 @@ private fun DraggableToolbarCard(
 
     Card(
         modifier = modifier
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        awaitPointerEvent()
+                        onToolbarInteracted()
+                    }
+                }
+            }
             .pointerInput(Unit) {
                 detectDragGesturesAfterLongPress(
                     onDragStart = {
