@@ -7,6 +7,7 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.IBinder
+import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import androidx.compose.foundation.layout.fillMaxSize
@@ -83,6 +84,8 @@ class MainService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,   // TODO: ?
             PixelFormat.TRANSLUCENT
         )
+        toolbarParams.gravity = Gravity.TOP or
+                Gravity.START
         // -------------------------------
 
         windowManager.addView(canvasView, canvasParams)
