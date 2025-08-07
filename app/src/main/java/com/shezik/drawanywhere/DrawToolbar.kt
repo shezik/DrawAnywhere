@@ -35,23 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 
-// TODO: Toggle methods in ViewModel, events implementation, modifiers (esp. size) unification
-
-sealed class ToolbarEvents {
-    object ToggleExpanded : ToolbarEvents()
-    data class ChangeOrientation(val orientation: ToolbarOrientation) : ToolbarEvents()
-
-    data class ChangePenType(val penType: PenType) : ToolbarEvents()
-    data class ChangeAlpha(val alpha: Float) : ToolbarEvents()
-    data class ChangeColor(val color: Color) : ToolbarEvents()
-    data class ChangeStrokeWidth(val width: Float) : ToolbarEvents()
-
-    object Undo : ToolbarEvents()
-    object Redo : ToolbarEvents()
-    object ClearCanvas : ToolbarEvents()
-    object ToggleCanvasVisibility : ToolbarEvents()
-    object ToggleCanvasPassthrough : ToolbarEvents()
-}
+// TODO: Toggle methods in ViewModel, modifiers (esp. size) unification
 
 // Unified button data class
 data class ToolbarButton(
