@@ -23,7 +23,7 @@ data class UiState(
     val secondDrawerOpen: Boolean = false,
 
     // Second drawer expand/collapse button is UI-specific, we don't (and shouldn't) see it here
-    // Buttons that don't appear in either list do not belong to drawers
+    // Buttons that don't appear in either drawer are "standalone"s, e.g. the visibility button
     val firstDrawerButtons: Set<String> = setOf(
         "undo", "clear", "pen_type", "color_picker"
     ),
@@ -43,6 +43,8 @@ fun defaultPenConfigs(): Map<PenType, PenConfig> = mapOf(
     PenType.StrokeEraser to PenConfig(penType = PenType.StrokeEraser, width = 50f)
 )
 
+
+
 class DrawViewModel(private val controller: DrawController) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
@@ -57,15 +59,11 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
                 // TODO: Save penConfig to preferences, excluding toolbarPosition. Actually, don't save anything when toolbarPosition changes.
                 controller.setPenConfig(state.currentPenConfig)
             }
-//            controller.setPenConfig(penConfig)  // TODO: ?
         }
     }
 
     fun switchToPen(type: PenType) =
         _uiState.update { it.copy(currentPenType = type) }
-
-    var previousPenType: PenType? = null
-    var isStrokeDown = false
 
     // TODO: Save to preferences, configurable
     fun resolvePenType(modifier: StrokeModifier) =
@@ -75,6 +73,11 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
             StrokeModifier.Both            -> PenType.StrokeEraser  // You might be experiencing a stroke
             StrokeModifier.None            -> uiState.value.currentPenType
         }
+
+
+
+    var previousPenType: PenType? = null
+    var isStrokeDown = false
 
     fun startStroke(point: Offset, modifier: StrokeModifier) {
         finishStroke()  // Oh no! No multitouch! Who cares.
@@ -106,11 +109,23 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
         isStrokeDown = false
     }
 
+
+
+    fun toggleCanvasVisible() =
+        setCanvasVisible(!uiState.value.canvasVisible)
+
     fun setCanvasVisible(visible: Boolean) =
         _uiState.update { it.copy(canvasVisible = visible) }
 
+
+
+    fun toggleCanvasPassthrough() =
+        setCanvasPassthrough(!uiState.value.canvasPassthrough)
+
     fun setCanvasPassthrough(passthrough: Boolean) =
         _uiState.update { it.copy(canvasPassthrough = passthrough) }
+
+
 
     fun setPenColor(color: Color) =
         _uiState.update {
@@ -122,7 +137,6 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
                 copy(penConfigs = newConfigs)
             }
         }
-
 
     fun setStrokeWidth(width: Float) =
         _uiState.update {
@@ -146,6 +160,8 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
             }
         }
 
+
+
     fun setToolbarPosition(position: Offset) =
         _uiState.update { it.copy(toolbarPosition = position) }
 
@@ -153,47 +169,48 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
         // TODO: Save toolbarPosition to preferences
     }
 
+
+
     fun clearCanvas() = controller.clearPaths()
     fun undo() = controller.undo()
     fun redo() = controller.redo()
 
-    fun setToolbarOrientation(orientation: ToolbarOrientation) {
+
+
+    fun toggleToolbarOrientation() =
+        setToolbarOrientation(
+            when (uiState.value.toolbarOrientation) {
+                ToolbarOrientation.VERTICAL -> ToolbarOrientation.HORIZONTAL
+                ToolbarOrientation.HORIZONTAL -> ToolbarOrientation.VERTICAL
+            }
+        )
+
+    fun setToolbarOrientation(orientation: ToolbarOrientation) =
         _uiState.update { it.copy(toolbarOrientation = orientation) }
-    }
 
-    private fun setEnabledButtons(buttons: Set<String>) {
-        // TODO: For preferences
-    }
 
-    private fun setButtonOrder(order: List<String>) {
-        // TODO: For preferences
-    }
 
-    fun toggleButtonEnabled(buttonId: String) {
-        // TODO
-//        val currentEnabled = _uiState.value.enabledButtons
-//        val newEnabled = if (currentEnabled.contains(buttonId)) {
-//            currentEnabled - buttonId
-//        } else {
-//            currentEnabled + buttonId
-//        }
-//        setEnabledButtons(newEnabled)
-    }
+    fun toggleFirstDrawer() =
+        setFirstDrawerExpanded(!uiState.value.firstDrawerOpen)
 
-    fun toggleFirstDrawer() {
-        _uiState.update { it.copy(firstDrawerOpen = !it.firstDrawerOpen) }
-    }
-
-    fun setFirstDrawerExpanded(state: Boolean) {
+    fun setFirstDrawerExpanded(state: Boolean) =
         _uiState.update { it.copy(firstDrawerOpen = state) }
-    }
 
-    fun toggleSecondDrawer() {
-        _uiState.update { it.copy(secondDrawerOpen = !it.secondDrawerOpen) }
+    fun toggleSecondDrawer() =
+        setSecondDrawerExpanded(!uiState.value.secondDrawerOpen)
+
+    fun setSecondDrawerExpanded(state: Boolean) =
+        _uiState.update { it.copy(secondDrawerOpen = state) }
+
+
+
+    fun toggleSecondDrawerPinned(id: String) {
+        val currentPinned = uiState.value.secondDrawerPinnedButtons
+        pinSecondDrawerButton(id, !currentPinned.contains(id))
     }
 
     fun pinSecondDrawerButton(id: String, pinned: Boolean) {
-        val currentPinned = _uiState.value.secondDrawerPinnedButtons
+        val currentPinned = uiState.value.secondDrawerPinnedButtons
         if (currentPinned.contains(id) == pinned)
             return
 
@@ -204,6 +221,8 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
 
         _uiState.update { it.copy(secondDrawerPinnedButtons = newPinned) }
     }
+
+
 
     // Enhanced save/restore methods
     fun saveToolbarState() {
@@ -238,22 +257,4 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
         //     )
         // }
     }
-
-//    fun onToolbarEvent(event: ToolbarEvent) {
-//        when (event) {
-//            is ToolbarEvent.ChangeAlpha -> setStrokeAlpha(event.alpha)
-//            is ToolbarEvent.ChangeColor -> setPenColor(event.color)
-//            is ToolbarEvent.ChangeStrokeWidth -> setStrokeWidth(event.width)
-//            is ToolbarEvent.ClearCanvas -> clearCanvas()
-//            is ToolbarEvent.PositionChange -> setToolbarPosition(event.position)
-//            is ToolbarEvent.PositionChangeFinished -> saveToolbarPosition()
-//            is ToolbarEvent.Redo -> redo()
-//            is ToolbarEvent.SetOrientation -> setToolbarOrientation(event.orientation)
-//            is ToolbarEvent.SwitchPenType -> switchToPen(event.penType)
-//            is ToolbarEvent.ToggleExpanded -> setToolbarExpanded(event.isExpanded)
-//            is ToolbarEvent.TogglePassthrough -> setCanvasPassthrough(!uiState.value.canvasPassthrough)
-//            is ToolbarEvent.ToggleVisibility -> setCanvasVisible(!uiState.value.canvasVisible)
-//            is ToolbarEvent.Undo -> undo()
-//        }
-//    }
 }
