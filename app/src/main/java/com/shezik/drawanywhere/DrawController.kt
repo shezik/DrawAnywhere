@@ -127,7 +127,7 @@ class DrawController {
         }
 
         redoStack.clear()
-        addToUndoStack(DrawAction.AddPath(latestPath))  // TODO: Is this a shallow copy? If so, we aren't touching its cachedPath.  // Undo/redo methods below depend on shallow copying.
+        addToUndoStack(DrawAction.AddPath(latestPath))  // Shallow copy, we aren't touching its cachedPath. Undo/redo methods below depend on shallow copying.
         updateUndoRedoState()
         updateClearPathsState()
     }

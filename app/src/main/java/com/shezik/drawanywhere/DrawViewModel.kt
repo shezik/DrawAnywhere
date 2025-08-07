@@ -25,13 +25,13 @@ data class UiState(
     // Second drawer expand/collapse button is UI-specific, we don't (and shouldn't) see it here
     // Buttons that don't appear in either drawer are "standalone"s, e.g. the visibility button
     val firstDrawerButtons: Set<String> = setOf(
-        "undo", "clear", "pen_type", "color_picker"
+        "undo", "clear", "pen_controls", "color_picker"
     ),
     val secondDrawerButtons: Set<String> = setOf(
-        "passthrough", "redo", "pen_config"
+        "passthrough", "redo", "settings"
     ),
     // Buttons that stay in second drawer but do not collapse
-    val secondDrawerPinnedButtons: Set<String> = setOf()
+    val secondDrawerPinnedButtons: Set<String> = emptySet()
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified

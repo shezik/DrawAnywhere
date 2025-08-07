@@ -2,11 +2,15 @@ package com.shezik.drawanywhere
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -29,12 +33,13 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 
-// TODO: Toggle methods in ViewModel, modifiers (esp. size) unification
+// TODO: Use toggle methods in ViewModel, modifiers (esp. size) unification
 
 // Unified button data class
 data class ToolbarButton(
@@ -43,10 +48,10 @@ data class ToolbarButton(
     val contentDescription: String,
     val isEnabled: Boolean = true,
     val onClick: (() -> Unit)? = null,
-    val popupContent: (@Composable () -> Unit)? = null
+    val popupPages: List<@Composable () -> Unit> = emptyList()
 ) {
     val hasPopup: Boolean
-        get() = popupContent != null
+        get() = popupPages.isNotEmpty()
 }
 
 enum class ToolbarOrientation {
@@ -85,6 +90,7 @@ fun DrawToolbar(
         onColorChange = viewModel::setPenColor,
         onStrokeWidthChange = viewModel::setStrokeWidth,
         onAlphaChange = viewModel::setStrokeAlpha,
+        onChangeOrientation = viewModel::setToolbarOrientation
     ).associateBy { it.id }
 
     DrawAnywhereTheme {
@@ -248,7 +254,8 @@ private fun ToolbarButtonsContainer(
                     ToolbarExpandButton(
                         modifier = Modifier,
                         isExpanded = isSecondDrawerOpen,
-                        onClick = onExpandToggleClick
+                        onClick = onExpandToggleClick,
+                        orientation = orientation
                     )
                 }
             }
@@ -288,7 +295,7 @@ private fun ToolbarButtonsContainer(
                     HorizontalDivider(
                         modifier = Modifier
                             .width(24.dp)
-                            .padding(horizontal = 8.dp),
+                            .padding(vertical = 8.dp),
                         thickness = 2.dp,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
                     )
@@ -316,7 +323,8 @@ private fun ToolbarButtonsContainer(
                     ToolbarExpandButton(
                         modifier = Modifier,
                         isExpanded = isSecondDrawerOpen,
-                        onClick = onExpandToggleClick
+                        onClick = onExpandToggleClick,
+                        orientation = orientation
                     )
                 }
             }
@@ -344,10 +352,17 @@ private fun RenderButton(button: ToolbarButton, popupAlignment: Alignment, modif
 private fun ToolbarExpandButton(
     modifier: Modifier,
     isExpanded: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    orientation: ToolbarOrientation
 ) {
+    val targetAngles =
+        when (orientation) {
+            ToolbarOrientation.HORIZONTAL -> Pair(180f, 0f)
+            ToolbarOrientation.VERTICAL -> Pair(270f, 90f)
+        }
+
     val rotationAngle by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
+        targetValue = if (isExpanded) targetAngles.first else targetAngles.second,
         animationSpec = tween(300, easing = FastOutSlowInEasing),
         label = "toggle_rotation"
     )
@@ -379,7 +394,7 @@ private fun ToolbarExpandButton(
 @Composable
 private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
     val scale by animateFloatAsState(
-        targetValue = if (button.isEnabled) 1f else 0.8f,
+        targetValue = if (button.isEnabled) 1f else 0.9f,
         animationSpec = tween(200),
         label = "button_scale"
     )
@@ -390,12 +405,11 @@ private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
         modifier = modifier
 //            .size(40.dp)
             // Apply clip and graphicsLayer after size for correct visual effects
-            .graphicsLayer { scaleX = scale; scaleY = scale } // Apply scaling to the whole button
+            .graphicsLayer { scaleX = scale; scaleY = scale }
             .background(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                shape = CircleShape // This applies the circular background and clips it
+                shape = CircleShape
             )
-        // No need for a separate .clip(CircleShape) if background has shape
     ) {
         Icon(
             imageVector = button.icon,
@@ -403,11 +417,12 @@ private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
             tint = if (button.isEnabled)
                 MaterialTheme.colorScheme.onSurface
             else
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
         )
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun PopupToolbarButton(
     modifier: Modifier,
@@ -420,15 +435,13 @@ private fun PopupToolbarButton(
         IconButton(
             onClick = { isPopupOpen = !isPopupOpen },
             enabled = button.isEnabled,
-            modifier = Modifier
-//                .size(40.dp)
-                .background(
-                    color = if (isPopupOpen)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                    shape = CircleShape // Apply CircleShape here for background
-                )
+            modifier = Modifier.background(
+                color = if (isPopupOpen)
+                    MaterialTheme.colorScheme.primaryContainer
+                else
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                shape = CircleShape
+            )
         ) {
             Icon(
                 imageVector = button.icon,
@@ -438,31 +451,71 @@ private fun PopupToolbarButton(
                 else if (button.isEnabled)
                     MaterialTheme.colorScheme.onSurface
                 else
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
             )
         }
 
-        if (isPopupOpen) {
+        if (isPopupOpen && button.popupPages.isNotEmpty()) {
+            val pagerState = rememberPagerState(initialPage = 0) { button.popupPages.size }
+
             Popup(
                 alignment = popupAlignment,
                 offset = when (popupAlignment) {
-                    Alignment.TopCenter -> androidx.compose.ui.unit.IntOffset(0, -60)
-                    Alignment.CenterEnd -> androidx.compose.ui.unit.IntOffset(60, 0)
-                    else -> androidx.compose.ui.unit.IntOffset(0, 0)
+                    Alignment.TopCenter -> IntOffset(0, -60)
+                    Alignment.CenterEnd -> IntOffset(60, 0)
+                    else -> IntOffset(0, 0)
                 },
                 onDismissRequest = { isPopupOpen = false },
                 properties = PopupProperties(focusable = true)
             ) {
                 Card(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .width(200.dp),
+//                        .defaultMinSize(minWidth = 200.dp),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
-                    Box(modifier = Modifier.padding(16.dp)) {
-                        button.popupContent?.invoke()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        HorizontalPager(
+                            state = pagerState,
+                            modifier = Modifier
+                                .animateContentSize(),
+                            verticalAlignment = Alignment.Top
+                        ) { page ->
+                            button.popupPages[page].invoke()
+                        }
+
+                        if (button.popupPages.size > 1) {
+                            Row(
+                                Modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                repeat(button.popupPages.size) { index ->
+                                    val selected = pagerState.currentPage == index
+                                    Box(
+                                        modifier = Modifier
+                                            .size(if (selected) 10.dp else 6.dp)
+                                            .padding(2.dp)
+                                            .background(
+                                                color = if (selected) MaterialTheme.colorScheme.onSurface
+                                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                shape = CircleShape
+                                            )
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -477,10 +530,10 @@ private fun PenTypeSelector(
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.width(120.dp)
+//        modifier = Modifier.width(120.dp)
     ) {
         Text(
-            text = "Tool",
+            text = "Tools",
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
@@ -488,7 +541,7 @@ private fun PenTypeSelector(
 
         val penTypes = listOf(
             PenType.Pen to "Pen",
-            PenType.StrokeEraser to "Eraser"
+            PenType.StrokeEraser to "Stroke Eraser"
         )
 
         penTypes.forEach { (penType, label) ->
@@ -561,7 +614,9 @@ private fun ColorPicker(
         Color.White, Color(0xFF8BC34A), Color(0xFFFF9800), Color(0xFF9C27B0)
     )
 
-    Column {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
         Text(
             text = "Color",
             style = MaterialTheme.typography.labelMedium,
@@ -569,16 +624,13 @@ private fun ColorPicker(
             color = MaterialTheme.colorScheme.onSurface
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Using regular Column/Row for color swatches
         Column(
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.width(120.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             colors.chunked(4).forEach { colorRow ->
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceAround
                 ) {
                     colorRow.forEach { color ->
                         ColorSwatchButton(
@@ -600,9 +652,15 @@ private fun PenControls(
     onAlphaChange: (Float) -> Unit
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = Modifier.width(200.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Text(
+            text = "Pen Controls",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
         SliderControl(
             label = "Width",
             value = penConfig.width,
@@ -618,6 +676,56 @@ private fun PenControls(
             onValueChange = onAlphaChange,
             valueDisplay = { "${(it * 100).toInt()}%" }
         )
+    }
+}
+
+@Composable
+private fun ToolbarControls(
+    currentOrientation: ToolbarOrientation,
+    onChangeOrientation: (ToolbarOrientation) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+//        modifier = Modifier.width(120.dp)
+    ) {
+        Text(
+            text = "Toolbar Controls",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        val orientations = listOf(
+            ToolbarOrientation.HORIZONTAL to "Horizontal",
+            ToolbarOrientation.VERTICAL to "Vertical"
+        )
+
+        orientations.forEach { (orientation, label) ->
+            val isSelected = currentOrientation == orientation
+            val backgroundColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surface
+            val contentColor = if (isSelected)
+                MaterialTheme.colorScheme.onPrimaryContainer
+            else
+                MaterialTheme.colorScheme.onSurface
+
+            Button(
+                onClick = { onChangeOrientation(orientation) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = backgroundColor,
+                    contentColor = contentColor
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
     }
 }
 
@@ -651,13 +759,14 @@ private fun SliderControl(
         Spacer(modifier = Modifier.height(4.dp))
 
         Slider(
+            modifier = Modifier.height(30.dp),
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f)
+                inactiveTrackColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
             )
         )
     }
@@ -677,6 +786,7 @@ private fun createAllToolbarButtons(
     onColorChange: (Color) -> Unit,
     onStrokeWidthChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
+    onChangeOrientation: (ToolbarOrientation) -> Unit
 ): List<ToolbarButton> {
     return listOf(
         ToolbarButton(
@@ -703,35 +813,41 @@ private fun createAllToolbarButtons(
         ),
 
         ToolbarButton(
-            id = "pen_type",
+            id = "pen_controls",
             icon = when (uiState.currentPenType) {
                 PenType.Pen -> Icons.Default.Edit
                 PenType.StrokeEraser -> Icons.Default.Delete
             },
-            contentDescription = "Tool selector",
-            popupContent = {
-                PenTypeSelector(
+            contentDescription = "Tool controls",
+            popupPages = listOf(
+                { PenTypeSelector(
                     currentPenType = uiState.currentPenType,
                     onPenTypeSwitch = onPenTypeSwitch
-                )
-            }
+                ) },
+
+                { PenControls(
+                    penConfig = uiState.currentPenConfig,
+                    onStrokeWidthChange = onStrokeWidthChange,
+                    onAlphaChange = onAlphaChange
+                ) }
+            )
         ),
 
         ToolbarButton(
             id = "color_picker",
             icon = Icons.Default.Palette,
             contentDescription = "Color picker",
-            popupContent = {
-                ColorPicker(
+            popupPages = listOf(
+                { ColorPicker(
                     selectedColor = uiState.currentPenConfig.color,
                     onColorSelected = onColorChange
-                )
-            }
+                ) }
+            )
         ),
 
         ToolbarButton(
             id = "passthrough",
-            icon = Icons.Default.TouchApp,
+            icon = if (uiState.canvasPassthrough) Icons.Default.DoNotTouch else Icons.Default.TouchApp,
             contentDescription = "Toggle passthrough",
             isEnabled = uiState.canvasVisible,
             onClick = { onCanvasPassthroughToggle(!uiState.canvasPassthrough) }
@@ -746,16 +862,15 @@ private fun createAllToolbarButtons(
         ),
 
         ToolbarButton(
-            id = "pen_config",
+            id = "settings",
             icon = Icons.Default.Tune,
-            contentDescription = "Pen settings",
-            popupContent = {
-                PenControls(
-                    penConfig = uiState.currentPenConfig,
-                    onStrokeWidthChange = onStrokeWidthChange,
-                    onAlphaChange = onAlphaChange
-                )
-            }
+            contentDescription = "Settings",
+            popupPages = listOf(
+                { ToolbarControls(
+                    currentOrientation = uiState.toolbarOrientation,
+                    onChangeOrientation = onChangeOrientation
+                ) }
+            )
         )
     )
 }
