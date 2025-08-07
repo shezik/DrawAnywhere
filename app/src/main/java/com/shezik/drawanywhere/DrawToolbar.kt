@@ -45,6 +45,7 @@ import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 data class ToolbarButton(
     val id: String,
     val icon: ImageVector,
+    val color: Color? = null,
     val contentDescription: String,
     val isEnabled: Boolean = true,
     val onClick: (() -> Unit)? = null,
@@ -76,7 +77,7 @@ fun DrawToolbar(
         canRedo = canRedo,
         canClearCanvas = canClearCanvas,
         onCanvasVisibilityToggle = { state: Boolean ->
-            viewModel.setCanvasVisible(state)
+            viewModel.setCanvasVisibility(state)
             viewModel.setFirstDrawerExpanded(state)  // TODO
         },
         onCanvasPassthroughToggle = { state: Boolean ->
@@ -90,7 +91,8 @@ fun DrawToolbar(
         onColorChange = viewModel::setPenColor,
         onStrokeWidthChange = viewModel::setStrokeWidth,
         onAlphaChange = viewModel::setStrokeAlpha,
-        onChangeOrientation = viewModel::setToolbarOrientation
+        onChangeOrientation = viewModel::setToolbarOrientation,
+        onChangeAutoClearCanvas = viewModel::setAutoClearCanvas
     ).associateBy { it.id }
 
     DrawAnywhereTheme {
@@ -393,6 +395,8 @@ private fun ToolbarExpandButton(
 
 @Composable
 private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
+    val iconColor = button.color ?: MaterialTheme.colorScheme.onSurface
+
     val scale by animateFloatAsState(
         targetValue = if (button.isEnabled) 1f else 0.9f,
         animationSpec = tween(200),
@@ -415,9 +419,9 @@ private fun AnimatedToolbarButton(modifier: Modifier, button: ToolbarButton) {
             imageVector = button.icon,
             contentDescription = button.contentDescription,
             tint = if (button.isEnabled)
-                MaterialTheme.colorScheme.onSurface
+                iconColor
             else
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                iconColor.copy(alpha = 0.4f)
         )
     }
 }
@@ -447,11 +451,11 @@ private fun PopupToolbarButton(
                 imageVector = button.icon,
                 contentDescription = button.contentDescription,
                 tint = if (isPopupOpen)
-                    MaterialTheme.colorScheme.onPrimaryContainer
+                    button.color ?: MaterialTheme.colorScheme.onPrimaryContainer
                 else if (button.isEnabled)
-                    MaterialTheme.colorScheme.onSurface
+                    button.color ?: MaterialTheme.colorScheme.onSurface
                 else
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    (button.color ?: MaterialTheme.colorScheme.onSurface).copy(alpha = 0.4f)
             )
         }
 
@@ -682,7 +686,9 @@ private fun PenControls(
 @Composable
 private fun ToolbarControls(
     currentOrientation: ToolbarOrientation,
-    onChangeOrientation: (ToolbarOrientation) -> Unit
+    onChangeOrientation: (ToolbarOrientation) -> Unit,
+    autoClearCanvas: Boolean,
+    onChangeAutoClearCanvas: (Boolean) -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -726,6 +732,8 @@ private fun ToolbarControls(
                 )
             }
         }
+
+        CheckboxControl("Clear canvas on hidden", autoClearCanvas, onChangeAutoClearCanvas)
     }
 }
 
@@ -772,6 +780,53 @@ private fun SliderControl(
     }
 }
 
+@Composable
+private fun CheckboxControl(
+    label: String,
+    isChecked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    description: String? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            description?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.ExtraLight,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+
+        Checkbox(
+            checked = isChecked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier
+                .height(24.dp)
+                .fillMaxWidth(),
+            colors = CheckboxDefaults.colors(
+                checkmarkColor = MaterialTheme.colorScheme.onPrimary,
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = MaterialTheme.colorScheme.outline
+            )
+        )
+    }
+}
+
 private fun createAllToolbarButtons(
     uiState: UiState,
     canUndo: Boolean,
@@ -786,7 +841,8 @@ private fun createAllToolbarButtons(
     onColorChange: (Color) -> Unit,
     onStrokeWidthChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
-    onChangeOrientation: (ToolbarOrientation) -> Unit
+    onChangeOrientation: (ToolbarOrientation) -> Unit,
+    onChangeAutoClearCanvas: (Boolean) -> Unit
 ): List<ToolbarButton> {
     return listOf(
         ToolbarButton(
@@ -836,6 +892,7 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "color_picker",
             icon = Icons.Default.Palette,
+            color = uiState.currentPenConfig.color,
             contentDescription = "Color picker",
             popupPages = listOf(
                 { ColorPicker(
@@ -868,7 +925,9 @@ private fun createAllToolbarButtons(
             popupPages = listOf(
                 { ToolbarControls(
                     currentOrientation = uiState.toolbarOrientation,
-                    onChangeOrientation = onChangeOrientation
+                    onChangeOrientation = onChangeOrientation,
+                    autoClearCanvas = uiState.autoClearCanvas,
+                    onChangeAutoClearCanvas = onChangeAutoClearCanvas
                 ) }
             )
         )

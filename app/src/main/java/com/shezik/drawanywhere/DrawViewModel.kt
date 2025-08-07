@@ -31,7 +31,9 @@ data class UiState(
         "passthrough", "redo", "settings"
     ),
     // Buttons that stay in second drawer but do not collapse
-    val secondDrawerPinnedButtons: Set<String> = emptySet()
+    val secondDrawerPinnedButtons: Set<String> = emptySet(),
+
+    val autoClearCanvas: Boolean = false
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified
@@ -111,11 +113,14 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
 
 
 
-    fun toggleCanvasVisible() =
-        setCanvasVisible(!uiState.value.canvasVisible)
+    fun toggleCanvasVisibility() =
+        setCanvasVisibility(!uiState.value.canvasVisible)
 
-    fun setCanvasVisible(visible: Boolean) =
+    fun setCanvasVisibility(visible: Boolean) {
+        if (uiState.value.autoClearCanvas && !visible)
+            clearCanvas()
         _uiState.update { it.copy(canvasVisible = visible) }
+    }
 
 
 
@@ -221,6 +226,11 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
 
         _uiState.update { it.copy(secondDrawerPinnedButtons = newPinned) }
     }
+
+
+
+    fun setAutoClearCanvas(state: Boolean) =
+        _uiState.update { it.copy(autoClearCanvas = state) }
 
 
 
