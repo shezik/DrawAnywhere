@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class MainService : Service() {
@@ -30,7 +31,8 @@ class MainService : Service() {
     private lateinit var canvasView: View
     private lateinit var toolbarView: View
     private val drawController = DrawController()
-    private val viewModel = DrawViewModel(drawController)
+    private val viewModel = DrawViewModel(drawController, { stopSelf() })
+    private var uiStateJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -91,7 +93,7 @@ class MainService : Service() {
         windowManager.addView(canvasView, canvasParams)
         windowManager.addView(toolbarView, toolbarParams)
 
-        CoroutineScope(Dispatchers.Main).launch {
+        uiStateJob = CoroutineScope(Dispatchers.Main).launch {
             viewModel.uiState.collect { state ->
                 // Canvas visibility and touch passthrough
                 canvasParams.flags = if (state.canvasPassthrough)
@@ -119,10 +121,13 @@ class MainService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        uiStateJob?.cancel()
+        if (::toolbarView.isInitialized && toolbarView.isAttachedToWindow)
+            windowManager.removeView(toolbarView)
+        if (::canvasView.isInitialized && canvasView.isAttachedToWindow)
+            windowManager.removeView(canvasView)
         customLifecycleOwner.onPause()
         customLifecycleOwner.onDestroy()
-        windowManager.removeView(canvasView)
-        windowManager.removeView(toolbarView)
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

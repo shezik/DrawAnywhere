@@ -14,6 +14,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
@@ -91,7 +92,8 @@ fun DrawToolbar(
         onStrokeWidthChange = viewModel::setStrokeWidth,
         onAlphaChange = viewModel::setStrokeAlpha,
         onChangeOrientation = viewModel::setToolbarOrientation,
-        onChangeAutoClearCanvas = viewModel::setAutoClearCanvas
+        onChangeAutoClearCanvas = viewModel::setAutoClearCanvas,
+        onQuitApplication = { viewModel.stopService() }
     ).associateBy { it.id }
 
     DrawAnywhereTheme {
@@ -747,6 +749,38 @@ private fun ToolbarControls(
 }
 
 @Composable
+private fun QuitConfirm(
+    onQuitConfirmed: () -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+//        modifier = Modifier.width(120.dp)
+    ) {
+        Text(
+            text = "Quit application?",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Button(
+            onClick = onQuitConfirmed,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface
+            ),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                text = "Yes",
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}
+
+@Composable
 private fun SliderControl(
     label: String,
     value: Float,
@@ -851,7 +885,8 @@ private fun createAllToolbarButtons(
     onStrokeWidthChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
     onChangeOrientation: (ToolbarOrientation) -> Unit,
-    onChangeAutoClearCanvas: (Boolean) -> Unit
+    onChangeAutoClearCanvas: (Boolean) -> Unit,
+    onQuitApplication: () -> Unit
 ): List<ToolbarButton> {
     return listOf(
         ToolbarButton(
@@ -937,6 +972,17 @@ private fun createAllToolbarButtons(
                     onChangeOrientation = onChangeOrientation,
                     autoClearCanvas = uiState.autoClearCanvas,
                     onChangeAutoClearCanvas = onChangeAutoClearCanvas
+                ) }
+            )
+        ),
+
+        ToolbarButton(
+            id = "quit",
+            icon = Icons.AutoMirrored.Filled.ExitToApp,
+            contentDescription = "Quit application",
+            popupPages = listOf(
+                { QuitConfirm(
+                    onQuitConfirmed = onQuitApplication
                 ) }
             )
         )

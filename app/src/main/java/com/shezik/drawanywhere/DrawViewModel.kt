@@ -31,7 +31,7 @@ data class UiState(
         "undo", "clear", "pen_controls", "color_picker"
     ),
     val secondDrawerButtons: Set<String> = setOf(
-        "passthrough", "redo", "settings"
+        "passthrough", "redo", "settings", "quit"
     ),
     // Buttons that stay in second drawer but do not collapse
     val secondDrawerPinnedButtons: Set<String> = emptySet(),
@@ -50,7 +50,7 @@ fun defaultPenConfigs(): Map<PenType, PenConfig> = mapOf(
 
 
 
-class DrawViewModel(private val controller: DrawController) : ViewModel() {
+class DrawViewModel(private val controller: DrawController, val stopService: () -> Unit) : ViewModel() {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
@@ -66,6 +66,11 @@ class DrawViewModel(private val controller: DrawController) : ViewModel() {
             }
         }
         resetToolbarTimer()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        dimmingJob?.cancel()
     }
 
     fun switchToPen(type: PenType) =
