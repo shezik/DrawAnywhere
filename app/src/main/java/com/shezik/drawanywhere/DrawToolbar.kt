@@ -19,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -28,12 +27,12 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 
 // TODO: Toggle methods in ViewModel, modifiers (esp. size) unification
 
@@ -88,23 +87,27 @@ fun DrawToolbar(
         onAlphaChange = viewModel::setStrokeAlpha,
     ).associateBy { it.id }
 
-    // Root composable
-    DraggableToolbarCard(
-        modifier = modifier
-            // Leave space for defaultElevation shadows, should be as small as possible
-            // since user can't start a stroke on the outer padding.
-            .padding(5.dp),
-        uiState = uiState,
-        haptics = haptics,
-        onPositionChange = viewModel::setToolbarPosition,
-        onPositionSaved = viewModel::saveToolbarPosition
-    ) {
-        ToolbarButtonsContainer(
-            modifier = Modifier.padding(8.dp),
+    DrawAnywhereTheme {
+        // Root composable
+        DraggableToolbarCard(
+            modifier = modifier
+                // Required for animatedContentSize on toolbar expansion
+                .wrapContentSize(unbounded = true)
+                // Leave space for defaultElevation shadows, should be as small as possible
+                // since user can't start a stroke on the outer padding.
+                .padding(5.dp),
             uiState = uiState,
-            allButtonsMap = allButtonsMap,
-            onExpandToggleClick = viewModel::toggleSecondDrawer
-        )
+            haptics = haptics,
+            onPositionChange = viewModel::setToolbarPosition,
+            onPositionSaved = viewModel::saveToolbarPosition
+        ) {
+            ToolbarButtonsContainer(
+                modifier = Modifier.padding(8.dp),
+                uiState = uiState,
+                allButtonsMap = allButtonsMap,
+                onExpandToggleClick = viewModel::toggleSecondDrawer
+            )
+        }
     }
 }
 
@@ -181,8 +184,8 @@ private fun ToolbarButtonsContainer(
     )
 
     when (orientation) {
-        // TODO: REMEMBER TO SYNC VERTICAL CODE WITH HORIZONTAL CODE
-        // TODO: HORIZONTAL CODE IS THE MOST ACCURATE
+        // REMEMBER TO SYNC VERTICAL CODE WITH HORIZONTAL CODE
+        // HORIZONTAL CODE IS THE MOST ACCURATE
         ToolbarOrientation.HORIZONTAL -> {
             Row(
                 modifier = modifier.then(animatedContentSize),
@@ -253,7 +256,7 @@ private fun ToolbarButtonsContainer(
 
         ToolbarOrientation.VERTICAL -> {
             Column(
-                modifier = modifier,
+                modifier = modifier.then(animatedContentSize),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = arrangement
             ) {
