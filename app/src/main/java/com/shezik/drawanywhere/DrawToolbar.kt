@@ -1,5 +1,6 @@
 package com.shezik.drawanywhere
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -7,12 +8,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Redo
@@ -58,6 +62,7 @@ enum class ToolbarOrientation {
     HORIZONTAL, VERTICAL
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun DrawToolbar(
     viewModel: DrawViewModel,
@@ -69,6 +74,7 @@ fun DrawToolbar(
     val canClearCanvas by viewModel.canClearCanvas.collectAsState()
 
     val haptics = LocalHapticFeedback.current
+    val scrollState = rememberScrollState()
 
     val allButtonsMap = createAllToolbarButtons(
         uiState = uiState,
@@ -97,25 +103,30 @@ fun DrawToolbar(
 
     DrawAnywhereTheme {
         // Root composable
-        DraggableToolbarCard(
-            modifier = modifier
-                // Required for animatedContentSize on toolbar expansion
-                .wrapContentSize(unbounded = true)
-                // Leave space for defaultElevation shadows, should be as small as possible
-                // since user can't start a stroke on the outer padding.
-                .padding(5.dp),
-            uiState = uiState,
-            haptics = haptics,
-            onPositionChange = viewModel::setToolbarPosition,
-            onPositionSaved = viewModel::saveToolbarPosition,
-            onToolbarInteracted = viewModel::resetToolbarTimer
-        ) {
-            ToolbarButtonsContainer(
-                modifier = Modifier.padding(8.dp),
+        BoxWithConstraints {
+            DraggableToolbarCard(
+                modifier = modifier
+                    .wrapContentSize(unbounded = true)  // Required for animatedContentSize on toolbar expansion
+                    .widthIn(max = maxWidth)
+                    .heightIn(max = maxHeight)
+                    .horizontalScroll(scrollState)
+                    .verticalScroll(scrollState)
+                    // Leave space for defaultElevation shadows, should be as small as possible
+                    // since user can't start a stroke on the outer padding.
+                    .padding(4.dp),
                 uiState = uiState,
-                allButtonsMap = allButtonsMap,
-                onExpandToggleClick = viewModel::toggleSecondDrawer
-            )
+                haptics = haptics,
+                onPositionChange = viewModel::setToolbarPosition,
+                onPositionSaved = viewModel::saveToolbarPosition,
+                onToolbarInteracted = viewModel::resetToolbarTimer
+            ) {
+                ToolbarButtonsContainer(
+                    modifier = Modifier.padding(8.dp),
+                    uiState = uiState,
+                    allButtonsMap = allButtonsMap,
+                    onExpandToggleClick = viewModel::toggleSecondDrawer
+                )
+            }
         }
     }
 }
@@ -161,7 +172,7 @@ private fun DraggableToolbarCard(
                     }
                 )
             },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = CircleShape,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.9f)
@@ -246,7 +257,8 @@ private fun ToolbarButtonsContainer(
 
                 secondDrawerButtonIds.forEach { buttonId ->
                     val button = allButtonsMap[buttonId] ?: return@forEach
-                    val isVisible = isFirstDrawerOpen && (isSecondDrawerOpen || buttonId in secondDrawerPinnedButtons)
+                    val isVisible =
+                        isFirstDrawerOpen && (isSecondDrawerOpen || buttonId in secondDrawerPinnedButtons)
 
                     AnimatedVisibility(
                         visible = isVisible,
@@ -257,7 +269,8 @@ private fun ToolbarButtonsContainer(
                     }
                 }
 
-                val isExpandButtonVisible = isFirstDrawerOpen && secondDrawerButtonIds.isNotEmpty()
+                val isExpandButtonVisible =
+                    isFirstDrawerOpen && secondDrawerButtonIds.isNotEmpty()
                 AnimatedVisibility(
                     visible = isExpandButtonVisible,
                     enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.5f),
