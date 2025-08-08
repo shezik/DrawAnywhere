@@ -921,7 +921,7 @@ private fun createAllToolbarButtons(
         ),
 
         ToolbarButton(
-            id = "pen_controls",
+            id = "tool_controls",
             icon = when (uiState.currentPenType) {
                 PenType.Pen -> Icons.Default.Edit
                 PenType.StrokeEraser -> Icons.Default.Delete

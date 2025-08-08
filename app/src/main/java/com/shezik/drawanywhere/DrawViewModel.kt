@@ -32,7 +32,7 @@ data class UiState(
     // Second drawer expand/collapse button is UI-specific, we don't (and shouldn't) see it here
     // Buttons that don't appear in either drawer are "standalone"s, e.g. the visibility button
     val firstDrawerButtons: Set<String> = setOf(
-        "undo", "clear", "pen_controls", "color_picker"
+        "undo", "clear", "tool_controls", "color_picker"
     ),
     val secondDrawerButtons: Set<String> = setOf(
         "passthrough", "redo", "settings"
