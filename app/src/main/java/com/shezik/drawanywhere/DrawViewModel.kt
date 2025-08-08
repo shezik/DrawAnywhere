@@ -31,7 +31,7 @@ data class UiState(
         "undo", "clear", "pen_controls", "color_picker"
     ),
     val secondDrawerButtons: Set<String> = setOf(
-        "passthrough", "redo", "settings", "quit"
+        "passthrough", "redo", "settings"
     ),
     // Buttons that stay in second drawer but do not collapse
     val secondDrawerPinnedButtons: Set<String> = emptySet(),
