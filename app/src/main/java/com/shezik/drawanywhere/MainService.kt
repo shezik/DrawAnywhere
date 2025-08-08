@@ -5,6 +5,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
 import android.os.IBinder
 import android.view.Gravity
@@ -21,10 +22,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import android.view.WindowManager.LayoutParams
+import androidx.core.app.ServiceCompat
 
 class MainService : Service() {
     companion object {
-        private const val NOTIFICATION_ID = 1
+        private const val NOTIFICATION_ID = 100
         private const val CHANNEL_ID = "default_channel"
     }
 
@@ -56,7 +58,7 @@ class MainService : Service() {
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification())
+        ServiceCompat.startForeground(this, NOTIFICATION_ID, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
 
         // -------- Setup canvas --------
         canvasView = ComposeView(this).apply {
@@ -169,6 +171,7 @@ class MainService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setSmallIcon(android.R.drawable.ic_menu_edit)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
     }
