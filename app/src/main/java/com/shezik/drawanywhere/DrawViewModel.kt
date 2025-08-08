@@ -78,6 +78,7 @@ class DrawViewModel(
 
         _uiState
             .onEach { state -> controller.setPenConfig(state.currentPenConfig) }  // TODO: BOMBARDED? AAA I SHOULDN'T HAVE IMPLEMENTED DRAGGING THIS WAY
+            // TODO: Should we move pinned buttons logic here?
             .launchIn(viewModelScope)
 
         resetToolbarTimer()
@@ -141,9 +142,22 @@ class DrawViewModel(
         setCanvasVisibility(!uiState.value.canvasVisible)
 
     fun setCanvasVisibility(visible: Boolean) {
-        if (uiState.value.autoClearCanvas && !visible)
+        var currentCanvasPassthrough = uiState.value.canvasPassthrough
+        var currentPinned = uiState.value.secondDrawerPinnedButtons
+
+        if (uiState.value.autoClearCanvas && !visible) {
             clearCanvas()
-        _uiState.update { it.copy(canvasVisible = visible) }
+            currentCanvasPassthrough = false
+            currentPinned = getPinSecondDrawerButtonResult("passthrough", false)
+        }
+
+        val currentFirstDrawerOpen = uiState.value.firstDrawerOpen
+        _uiState.update { it.copy(
+            canvasVisible = visible,
+            canvasPassthrough = currentCanvasPassthrough,
+            firstDrawerOpen = !currentFirstDrawerOpen,
+            secondDrawerPinnedButtons = currentPinned
+        ) }
     }
 
 
@@ -151,8 +165,10 @@ class DrawViewModel(
     fun toggleCanvasPassthrough() =
         setCanvasPassthrough(!uiState.value.canvasPassthrough)
 
-    fun setCanvasPassthrough(passthrough: Boolean) =
-        _uiState.update { it.copy(canvasPassthrough = passthrough) }
+    fun setCanvasPassthrough(passthrough: Boolean) {
+        val newPinned = getPinSecondDrawerButtonResult("passthrough", passthrough)
+        _uiState.update { it.copy(canvasPassthrough = passthrough, secondDrawerPinnedButtons = newPinned) }
+    }
 
 
 
@@ -195,7 +211,7 @@ class DrawViewModel(
         _uiState.update { it.copy(toolbarPosition = position) }
 
     fun saveToolbarPosition() {
-        // TODO: Save toolbarPosition to preferences
+        // TODO: Pending removal?
     }
 
 
@@ -236,15 +252,15 @@ class DrawViewModel(
 
 
     fun toggleFirstDrawer() =
-        setFirstDrawerExpanded(!uiState.value.firstDrawerOpen)
+        setFirstDrawerOpen(!uiState.value.firstDrawerOpen)
 
-    fun setFirstDrawerExpanded(state: Boolean) =
+    fun setFirstDrawerOpen(state: Boolean) =
         _uiState.update { it.copy(firstDrawerOpen = state) }
 
     fun toggleSecondDrawer() =
-        setSecondDrawerExpanded(!uiState.value.secondDrawerOpen)
+        setSecondDrawerOpen(!uiState.value.secondDrawerOpen)
 
-    fun setSecondDrawerExpanded(state: Boolean) =
+    fun setSecondDrawerOpen(state: Boolean) =
         _uiState.update { it.copy(secondDrawerOpen = state) }
 
 
@@ -254,17 +270,18 @@ class DrawViewModel(
         pinSecondDrawerButton(id, !currentPinned.contains(id))
     }
 
-    fun pinSecondDrawerButton(id: String, pinned: Boolean) {
+    fun pinSecondDrawerButton(id: String, pinned: Boolean) =
+        _uiState.update { it.copy(secondDrawerPinnedButtons = getPinSecondDrawerButtonResult(id, pinned)) }
+
+    private fun getPinSecondDrawerButtonResult(id: String, pinned: Boolean): Set<String> {
         val currentPinned = uiState.value.secondDrawerPinnedButtons
         if (currentPinned.contains(id) == pinned)
-            return
+            return currentPinned
 
-        val newPinned = if (pinned)
+        return if (pinned)
             currentPinned + id
         else
             currentPinned - id
-
-        _uiState.update { it.copy(secondDrawerPinnedButtons = newPinned) }
     }
 
 

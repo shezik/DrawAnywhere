@@ -43,7 +43,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 
-// TODO: Use toggle methods in ViewModel, modifiers (esp. size) unification
+// TODO: Modifiers (esp. size) unification
 
 data class ToolbarButton(
     val id: String,
@@ -81,14 +81,8 @@ fun DrawToolbar(
         canUndo = canUndo,
         canRedo = canRedo,
         canClearCanvas = canClearCanvas,
-        onCanvasVisibilityToggle = { state: Boolean ->
-            viewModel.setCanvasVisibility(state)
-            viewModel.setFirstDrawerExpanded(state)  // TODO
-        },
-        onCanvasPassthroughToggle = { state: Boolean ->
-            viewModel.setCanvasPassthrough(state)
-            viewModel.pinSecondDrawerButton("passthrough", state)  // TODO
-        },
+        onCanvasVisibilityToggle = viewModel::toggleCanvasVisibility,
+        onCanvasPassthroughToggle = viewModel::toggleCanvasPassthrough,
         onClearCanvas = viewModel::clearCanvas,
         onUndo = viewModel::undo,
         onRedo = viewModel::redo,
@@ -877,8 +871,8 @@ private fun createAllToolbarButtons(
     canUndo: Boolean,
     canRedo: Boolean,
     canClearCanvas: Boolean,
-    onCanvasVisibilityToggle: (Boolean) -> Unit,
-    onCanvasPassthroughToggle: (Boolean) -> Unit,
+    onCanvasVisibilityToggle: () -> Unit,
+    onCanvasPassthroughToggle: () -> Unit,
     onClearCanvas: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
@@ -895,7 +889,7 @@ private fun createAllToolbarButtons(
             id = "visibility",
             icon = if (uiState.canvasVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
             contentDescription = if (uiState.canvasVisible) "Hide canvas" else "Show canvas",
-            onClick = { onCanvasVisibilityToggle(!uiState.canvasVisible) }
+            onClick = onCanvasVisibilityToggle
         ),
 
         ToolbarButton(
@@ -953,7 +947,7 @@ private fun createAllToolbarButtons(
             icon = if (uiState.canvasPassthrough) Icons.Default.DoNotTouch else Icons.Default.TouchApp,
             contentDescription = "Toggle passthrough",
             isEnabled = uiState.canvasVisible,
-            onClick = { onCanvasPassthroughToggle(!uiState.canvasPassthrough) }
+            onClick = onCanvasPassthroughToggle
         ),
 
         ToolbarButton(
