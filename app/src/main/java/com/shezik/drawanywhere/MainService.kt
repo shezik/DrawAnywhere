@@ -100,6 +100,8 @@ class MainService : Service() {
                     WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,   // TODO: ?
             PixelFormat.TRANSLUCENT
         )
+        toolbarParams.x = initialUiState.toolbarPosition.x.toInt()
+        toolbarParams.y = initialUiState.toolbarPosition.y.toInt()
         toolbarParams.gravity = Gravity.TOP or
                 Gravity.START
         // -------------------------------
