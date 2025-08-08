@@ -79,7 +79,8 @@ fun DrawToolbar(
     val canClearCanvas by viewModel.canClearCanvas.collectAsState()
 
     val haptics = LocalHapticFeedback.current
-    val scrollState = rememberScrollState()
+    val hScrollState = rememberScrollState()
+    val vScrollState = rememberScrollState()
 
     val allButtonsMap = createAllToolbarButtons(
         uiState = uiState,
@@ -109,8 +110,10 @@ fun DrawToolbar(
                     .wrapContentSize(unbounded = true)  // Required for animatedContentSize on toolbar expansion
                     .widthIn(max = maxWidth)
                     .heightIn(max = maxHeight)
-                    .horizontalScroll(scrollState)
-                    .verticalScroll(scrollState)
+                    .scrollFadingEdges(hScrollState, false)
+                    .scrollFadingEdges(vScrollState, true)
+                    .horizontalScroll(hScrollState)
+                    .verticalScroll(vScrollState)
                     // Leave space for defaultElevation shadows, should be as small as possible
                     // since user can't start a stroke on the outer padding.
                     .padding(4.dp),
