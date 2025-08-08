@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import android.view.WindowManager.LayoutParams
 
 class MainService : Service() {
     companion object {
@@ -70,14 +71,14 @@ class MainService : Service() {
         }
         customLifecycleOwner.attachToDecorView(canvasView)
 
-        val canvasParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+        val canvasParams = LayoutParams(
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.MATCH_PARENT,
+            LayoutParams.TYPE_APPLICATION_OVERLAY,
+            LayoutParams.FLAG_NOT_FOCUSABLE or
+                    LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
         // ------------------------------
@@ -90,33 +91,29 @@ class MainService : Service() {
         }
         customLifecycleOwner.attachToDecorView(toolbarView)
 
-        val toolbarParams = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.WRAP_CONTENT,
-            WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or  // TODO: ?
-                    WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,   // TODO: ?
+        val toolbarParams = LayoutParams(
+            LayoutParams.WRAP_CONTENT,
+            LayoutParams.WRAP_CONTENT,
+            LayoutParams.TYPE_APPLICATION_OVERLAY,
+            LayoutParams.FLAG_NOT_FOCUSABLE or
+                    LayoutParams.FLAG_NOT_TOUCH_MODAL or  // TODO: ?
+                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    LayoutParams.FLAG_LAYOUT_IN_SCREEN,   // TODO: ?
             PixelFormat.TRANSLUCENT
         )
-        toolbarParams.x = initialUiState.toolbarPosition.x.toInt()
-        toolbarParams.y = initialUiState.toolbarPosition.y.toInt()
         toolbarParams.gravity = Gravity.TOP or
                 Gravity.START
         // -------------------------------
 
+        handleLayoutParams(canvasParams, toolbarParams, initialUiState)
         windowManager.addView(canvasView, canvasParams)
         windowManager.addView(toolbarView, toolbarParams)
 
         uiStateJob = CoroutineScope(Dispatchers.Main).launch {
             viewModel.uiState.collect { state ->
-                // Canvas visibility and touch passthrough
-                canvasParams.flags = if (state.canvasPassthrough)
-                    canvasParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-                else
-                    canvasParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+                handleLayoutParams(canvasParams, toolbarParams, state)
                 windowManager.updateViewLayout(canvasView, canvasParams)
+                windowManager.updateViewLayout(toolbarView, toolbarParams)
 
                 canvasView.visibility = if (state.canvasVisible)
                     View.VISIBLE else View.GONE
@@ -126,13 +123,24 @@ class MainService : Service() {
                     .alpha(targetAlpha)
                     .setDuration(300)  // Animate alpha change over 300 milliseconds
                     .start()
-
-                // Toolbar position
-                toolbarParams.x = state.toolbarPosition.x.toInt()
-                toolbarParams.y = state.toolbarPosition.y.toInt()
-                windowManager.updateViewLayout(toolbarView, toolbarParams)
             }
         }
+    }
+
+    fun handleLayoutParams(
+        canvasParams: LayoutParams,
+        toolbarParams: LayoutParams,
+        state: UiState
+    ) {
+        // Canvas visibility and touch passthrough
+        canvasParams.flags = if (state.canvasPassthrough)
+            canvasParams.flags or LayoutParams.FLAG_NOT_TOUCHABLE
+        else
+            canvasParams.flags and LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+
+        // Toolbar position
+        toolbarParams.x = state.toolbarPosition.x.toInt()
+        toolbarParams.y = state.toolbarPosition.y.toInt()
     }
 
     override fun onDestroy() {
