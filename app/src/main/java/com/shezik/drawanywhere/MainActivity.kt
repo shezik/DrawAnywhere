@@ -1,48 +1,22 @@
 package com.shezik.drawanywhere
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
-import android.os.Bundle
 import android.provider.Settings
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 
-class MainActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        setContent {
-            Column(Modifier.padding(24.dp)) {
-                Button(onClick = {
-                    val intent = Intent(this@MainActivity, MainService::class.java)
-                    startForegroundService(intent)
-
-                }) {
-                    Text("Start Overlay")
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(onClick = {
-                    stopService(Intent(this@MainActivity, MainService::class.java))
-                }) {
-                    Text("Stop Overlay")
-                }
-            }
-        }
-    }
-
+class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
 
-        if (!Settings.canDrawOverlays(this))
+        if (Settings.canDrawOverlays(this)) {
+            val intent = Intent(this@MainActivity, MainService::class.java)
+            startForegroundService(intent)
+            finish()
+        } else {
             showOverlayPermissionDialog()
+        }
     }
 
     private fun showOverlayPermissionDialog() =
