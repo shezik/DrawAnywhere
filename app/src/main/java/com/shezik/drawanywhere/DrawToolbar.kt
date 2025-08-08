@@ -797,41 +797,43 @@ private fun ToolbarControls(
 
 @Composable
 fun AboutScreen() {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.app_icon),
-            contentDescription = stringResource(R.string.app_name),
-            modifier = Modifier.size(72.dp),
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-        )
+    Box(modifier = Modifier.padding(12.dp)) {  // Looks nice.
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.app_icon),
+                contentDescription = stringResource(R.string.app_name),
+                modifier = Modifier.size(72.dp),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+            )
 
-        Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
-        Text(
-            text = stringResource(R.string.version_name),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.ExtraLight,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+            Text(
+                text = stringResource(R.string.version_name),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.ExtraLight,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Text(
-            text = stringResource(R.string.about_text),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Light,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurface
-        )
+            Text(
+                text = stringResource(R.string.about_text),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Light,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
     }
 }
 @Composable
