@@ -23,6 +23,7 @@ class PreferencesManager(private val context: Context) {
         val TOOLBAR_POSITION_Y = floatPreferencesKey("toolbar_position_y")
         val TOOLBAR_ORIENTATION = stringPreferencesKey("toolbar_orientation")
         val AUTO_CLEAR_CANVAS = booleanPreferencesKey("auto_clear_canvas")
+        val VISIBLE_ON_START = booleanPreferencesKey("visible_on_start")
 
         // Pen-specific keys (for saving multiple pens)
         fun penColorKey(penType: PenType) = intPreferencesKey("${penType.name}_color")
@@ -69,6 +70,8 @@ class PreferencesManager(private val context: Context) {
             }
         }
 
+        val visibleOnStart = preferences[PreferencesKeys.VISIBLE_ON_START] ?: defaultUiState.visibleOnStart
+
         return UiState(
             currentPenType = currentPenType,
             penConfigs = penConfigs,
@@ -79,7 +82,11 @@ class PreferencesManager(private val context: Context) {
             toolbarOrientation = getEnumValueOrDefault<ToolbarOrientation>(
                 preferences[PreferencesKeys.TOOLBAR_ORIENTATION],
                 defaultUiState.toolbarOrientation),
-            autoClearCanvas = preferences[PreferencesKeys.AUTO_CLEAR_CANVAS] ?: defaultUiState.autoClearCanvas
+            autoClearCanvas = preferences[PreferencesKeys.AUTO_CLEAR_CANVAS] ?: defaultUiState.autoClearCanvas,
+
+            visibleOnStart = visibleOnStart,
+            canvasVisible = visibleOnStart,
+            firstDrawerOpen = visibleOnStart
         )
     }
 
@@ -90,6 +97,7 @@ class PreferencesManager(private val context: Context) {
             preferences[PreferencesKeys.TOOLBAR_POSITION_Y] = uiState.toolbarPosition.y
             preferences[PreferencesKeys.TOOLBAR_ORIENTATION] = uiState.toolbarOrientation.name
             preferences[PreferencesKeys.AUTO_CLEAR_CANVAS] = uiState.autoClearCanvas
+            preferences[PreferencesKeys.VISIBLE_ON_START] = uiState.visibleOnStart
 
             // Save each pen's configuration
             for ((penType, config) in uiState.penConfigs) {

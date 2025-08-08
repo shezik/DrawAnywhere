@@ -92,6 +92,7 @@ fun DrawToolbar(
         onAlphaChange = viewModel::setStrokeAlpha,
         onChangeOrientation = viewModel::setToolbarOrientation,
         onChangeAutoClearCanvas = viewModel::setAutoClearCanvas,
+        onChangeVisibleOnStart = viewModel::setVisibleOnStart,
         onQuitApplication = viewModel::quitApplication
     ).associateBy { it.id }
 
@@ -708,6 +709,8 @@ private fun ToolbarControls(
     onChangeOrientation: (ToolbarOrientation) -> Unit,
     autoClearCanvas: Boolean,
     onChangeAutoClearCanvas: (Boolean) -> Unit,
+    visibleOnStart: Boolean,
+    onChangeVisibleOnStart: (Boolean) -> Unit,
     onQuitApplication: () -> Unit
 ) {
     Column(
@@ -757,6 +760,12 @@ private fun ToolbarControls(
             label = "Clear canvas on hidden",
             isChecked = autoClearCanvas,
             onCheckedChange = onChangeAutoClearCanvas
+        )
+
+        CheckboxControl(
+            label = "Canvas visible on start",
+            isChecked = visibleOnStart,
+            onCheckedChange = onChangeVisibleOnStart
         )
 
         Button(
@@ -882,6 +891,7 @@ private fun createAllToolbarButtons(
     onAlphaChange: (Float) -> Unit,
     onChangeOrientation: (ToolbarOrientation) -> Unit,
     onChangeAutoClearCanvas: (Boolean) -> Unit,
+    onChangeVisibleOnStart: (Boolean) -> Unit,
     onQuitApplication: () -> Unit
 ): List<ToolbarButton> {
     return listOf(
@@ -968,6 +978,8 @@ private fun createAllToolbarButtons(
                     onChangeOrientation = onChangeOrientation,
                     autoClearCanvas = uiState.autoClearCanvas,
                     onChangeAutoClearCanvas = onChangeAutoClearCanvas,
+                    visibleOnStart = uiState.visibleOnStart,
+                    onChangeVisibleOnStart = onChangeVisibleOnStart,
                     onQuitApplication = onQuitApplication
                 ) }
             )

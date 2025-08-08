@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class UiState(
-    val canvasVisible: Boolean = true,
+    val canvasVisible: Boolean = true,  // Overridden on start by visibleOnStart in PreferencesManager
     val canvasPassthrough: Boolean = false,
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
@@ -26,7 +26,7 @@ data class UiState(
     val toolbarPosition: Offset = Offset(0f, 0f),
     val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
 
-    val firstDrawerOpen: Boolean = !canvasPassthrough,
+    val firstDrawerOpen: Boolean = canvasVisible,
     val secondDrawerOpen: Boolean = false,
 
     // Second drawer expand/collapse button is UI-specific, we don't (and shouldn't) see it here
@@ -40,7 +40,8 @@ data class UiState(
     // Buttons that stay in second drawer but do not collapse
     val secondDrawerPinnedButtons: Set<String> = emptySet(),
 
-    val autoClearCanvas: Boolean = false
+    val autoClearCanvas: Boolean = false,
+    val visibleOnStart: Boolean = true
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified
@@ -288,6 +289,9 @@ class DrawViewModel(
 
     fun setAutoClearCanvas(state: Boolean) =
         _uiState.update { it.copy(autoClearCanvas = state) }
+
+    fun setVisibleOnStart(state: Boolean) =
+        _uiState.update { it.copy(visibleOnStart = state) }
 
     fun quitApplication() {
         viewModelScope.launch {
