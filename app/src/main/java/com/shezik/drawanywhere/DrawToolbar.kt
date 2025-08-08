@@ -972,7 +972,7 @@ private fun createAllToolbarButtons(
             id = "tool_controls",
             icon = when (uiState.currentPenType) {
                 PenType.Pen -> Icons.Default.Edit
-                PenType.StrokeEraser -> Icons.Default.Delete
+                PenType.StrokeEraser -> InkEraser24Px
             },
             contentDescription = stringResource(R.string.tool_controls),
             popupPages = listOf(
