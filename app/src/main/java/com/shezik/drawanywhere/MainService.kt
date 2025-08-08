@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainService : Service() {
     companion object {
@@ -31,11 +32,24 @@ class MainService : Service() {
     private lateinit var canvasView: View
     private lateinit var toolbarView: View
     private val drawController = DrawController()
-    private val viewModel = DrawViewModel(drawController, { stopSelf() })
+    private lateinit var preferencesMgr: PreferencesManager
+    private lateinit var viewModel: DrawViewModel
     private var uiStateJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
+
+        preferencesMgr = PreferencesManager(this)
+        val initialUiState = runBlocking {
+            preferencesMgr.getSavedUiState()
+        }
+        viewModel = DrawViewModel(
+            controller = drawController,
+            preferencesMgr = preferencesMgr,
+            initialUiState = initialUiState,
+            stopService = { stopSelf() }
+        )
+
         customLifecycleOwner.onCreate()
         customLifecycleOwner.onResume()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager

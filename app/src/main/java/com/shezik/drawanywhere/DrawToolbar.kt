@@ -98,7 +98,7 @@ fun DrawToolbar(
         onAlphaChange = viewModel::setStrokeAlpha,
         onChangeOrientation = viewModel::setToolbarOrientation,
         onChangeAutoClearCanvas = viewModel::setAutoClearCanvas,
-        onQuitApplication = { viewModel.stopService() }
+        onQuitApplication = viewModel::quitApplication
     ).associateBy { it.id }
 
     DrawAnywhereTheme {

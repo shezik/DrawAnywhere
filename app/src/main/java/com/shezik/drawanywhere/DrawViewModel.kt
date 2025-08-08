@@ -4,11 +4,15 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -19,7 +23,7 @@ data class UiState(
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
 
     val toolbarActive: Boolean = true,
-    val toolbarPosition: Offset = Offset(0f, 0f),  // TODO: Read penConfig and toolbarPosition from preferences
+    val toolbarPosition: Offset = Offset(0f, 0f),
     val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
 
     val firstDrawerOpen: Boolean = !canvasPassthrough,
@@ -50,8 +54,14 @@ fun defaultPenConfigs(): Map<PenType, PenConfig> = mapOf(
 
 
 
-class DrawViewModel(private val controller: DrawController, val stopService: () -> Unit) : ViewModel() {
-    private val _uiState = MutableStateFlow(UiState())
+@OptIn(FlowPreview::class)
+class DrawViewModel(
+    private val controller: DrawController,
+    private val preferencesMgr: PreferencesManager,
+    initialUiState: UiState,
+    private val stopService: () -> Unit
+) : ViewModel() {
+    private val _uiState = MutableStateFlow(initialUiState)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     val canUndo: StateFlow<Boolean> = controller.canUndo
@@ -59,12 +69,17 @@ class DrawViewModel(private val controller: DrawController, val stopService: () 
     val canClearCanvas: StateFlow<Boolean> = controller.canClearPaths
 
     init {
-        viewModelScope.launch {
-            _uiState.collect { state->
-                // TODO: Save penConfig to preferences, excluding toolbarPosition. Actually, don't save anything when toolbarPosition changes.
-                controller.setPenConfig(state.currentPenConfig)
-            }
-        }
+        controller.setPenConfig(initialUiState.currentPenConfig)
+
+        _uiState
+            .debounce(500L)
+            .onEach { state -> preferencesMgr.saveUiState(state) }
+            .launchIn(viewModelScope)
+
+        _uiState
+            .onEach { state -> controller.setPenConfig(state.currentPenConfig) }  // TODO: BOMBARDED? AAA I SHOULDN'T HAVE IMPLEMENTED DRAGGING THIS WAY
+            .launchIn(viewModelScope)
+
         resetToolbarTimer()
     }
 
@@ -257,39 +272,10 @@ class DrawViewModel(private val controller: DrawController, val stopService: () 
     fun setAutoClearCanvas(state: Boolean) =
         _uiState.update { it.copy(autoClearCanvas = state) }
 
-
-
-    // Enhanced save/restore methods
-    fun saveToolbarState() {
-        val state = _uiState.value
-        // Save to preferences - integrate with your existing preferences system
-        // preferences.putBoolean("toolbar_expanded", state.toolbarExpanded)
-        // preferences.putString("toolbar_orientation", state.lastToolbarOrientation?.name)
-        // preferences.putStringSet("enabled_buttons", state.enabledButtons)
-        // preferences.putString("button_order", state.buttonOrder.joinToString(","))
-    }
-
-    fun restoreToolbarState() {
-        // Restore from preferences - integrate with your existing preferences system
-        // val expanded = preferences.getBoolean("toolbar_expanded", true)
-        // val orientation = preferences.getString("toolbar_orientation", null)
-        //     ?.let { ToolbarOrientation.valueOf(it) }
-        // val enabledButtons = preferences.getStringSet("enabled_buttons", null)
-        //     ?: setOf("visibility", "passthrough", "undo", "redo", "clear",
-        //              "pen_type", "color_picker", "pen_config")
-        // val buttonOrder = preferences.getString("button_order", "")
-        //     .split(",").filter { it.isNotEmpty() }
-        //     .takeIf { it.isNotEmpty() }
-        //     ?: listOf("visibility", "passthrough", "undo", "redo", "clear",
-        //               "pen_type", "color_picker", "pen_config")
-
-        // _uiState.update {
-        //     it.copy(
-        //         toolbarExpanded = expanded,
-        //         lastToolbarOrientation = orientation,
-        //         enabledButtons = enabledButtons,
-        //         buttonOrder = buttonOrder
-        //     )
-        // }
+    fun quitApplication() {
+        viewModelScope.launch {
+            preferencesMgr.saveUiState(uiState.value)
+            stopService()
+        }
     }
 }
