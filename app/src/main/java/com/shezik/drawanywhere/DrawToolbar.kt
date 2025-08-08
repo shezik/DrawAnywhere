@@ -839,7 +839,7 @@ private fun CheckboxControl(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(
@@ -866,8 +866,8 @@ private fun CheckboxControl(
             checked = isChecked,
             onCheckedChange = onCheckedChange,
             modifier = Modifier
-                .height(24.dp)
-                .fillMaxWidth(),
+                .width(24.dp)
+                .height(24.dp),
             colors = CheckboxDefaults.colors(
                 checkmarkColor = MaterialTheme.colorScheme.onPrimary,
                 checkedColor = MaterialTheme.colorScheme.primary,
