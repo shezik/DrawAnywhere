@@ -5,4 +5,27 @@
     <string name="overlay_permission_description">此应用需要悬浮窗权限来在其他应用上绘制画布。</string>
     <string name="permission_accept">继续</string>
     <string name="permission_deny">退出</string>
+    <string name="collapse_toolbar">收起工具栏</string>
+    <string name="expand_toolbar">展开工具栏</string>
+    <string name="tools">工具</string>
+    <string name="pen">笔</string>
+    <string name="stroke_eraser">笔画橡皮</string>
+    <string name="color">颜色</string>
+    <string name="width">宽度</string>
+    <string name="opacity">不透明度</string>
+    <string name="horizontal">横向</string>
+    <string name="vertical">竖向</string>
+    <string name="clear_canvas_on_hidden">隐藏画布时清空</string>
+    <string name="canvas_visible_on_start">启动时显示画布</string>
+    <string name="quit">退出</string>
+    <string name="hide_canvas">隐藏画布</string>
+    <string name="show_canvas">显示画布</string>
+    <string name="undo">撤销</string>
+    <string name="clear_canvas">清空画布</string>
+    <string name="tool_controls">工具选项</string>
+    <string name="color_picker">取色器</string>
+    <string name="disable_passthrough">禁用触摸透传</string>
+    <string name="redo">重做</string>
+    <string name="settings">设置</string>
+    <string name="enable_passthrough">启用触摸透传</string>
 </resources>

@@ -4,4 +4,27 @@
     <string name="overlay_permission_description">This application needs overlay permission to draw the canvas on top of other apps.</string>
     <string name="permission_accept">Proceed</string>
     <string name="permission_deny">Exit</string>
+    <string name="collapse_toolbar">Collapse toolbar</string>
+    <string name="expand_toolbar">Expand toolbar</string>
+    <string name="tools">Tools</string>
+    <string name="pen">Pen</string>
+    <string name="stroke_eraser">Stroke Eraser</string>
+    <string name="color">Color</string>
+    <string name="width">Width</string>
+    <string name="opacity">Opacity</string>
+    <string name="horizontal">Horizontal</string>
+    <string name="vertical">Vertical</string>
+    <string name="clear_canvas_on_hidden">Clear on canvas hidden</string>
+    <string name="canvas_visible_on_start">Canvas visible on start</string>
+    <string name="quit">Quit</string>
+    <string name="hide_canvas">Hide canvas</string>
+    <string name="show_canvas">Show canvas</string>
+    <string name="undo">Undo</string>
+    <string name="clear_canvas">Clear canvas</string>
+    <string name="tool_controls">Tool controls</string>
+    <string name="color_picker">Color picker</string>
+    <string name="disable_passthrough">Disable passthrough</string>
+    <string name="redo">Redo</string>
+    <string name="settings">Settings</string>
+    <string name="enable_passthrough">Enable passthrough</string>
 </resources>

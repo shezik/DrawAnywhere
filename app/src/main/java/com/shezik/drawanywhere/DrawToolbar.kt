@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
+import androidx.compose.ui.res.stringResource
 
 // TODO: Modifiers (esp. size) unification
 
@@ -403,7 +404,7 @@ private fun ToolbarExpandButton(
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = if (isExpanded) "Collapse toolbar" else "Expand toolbar",
+            contentDescription = if (isExpanded) stringResource(R.string.collapse_toolbar) else stringResource(R.string.expand_toolbar),
             tint = if (isExpanded)
                 MaterialTheme.colorScheme.onPrimaryContainer
             else
@@ -557,15 +558,15 @@ private fun PenTypeSelector(
 //        modifier = Modifier.width(120.dp)
     ) {
         Text(
-            text = "Tools",
+            text = stringResource(R.string.tools),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
 
         val penTypes = listOf(
-            PenType.Pen to "Pen",
-            PenType.StrokeEraser to "Stroke Eraser"
+            PenType.Pen to stringResource(R.string.pen),
+            PenType.StrokeEraser to stringResource(R.string.stroke_eraser)
         )
 
         penTypes.forEach { (penType, label) ->
@@ -642,7 +643,7 @@ private fun ColorPicker(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Color",
+            text = stringResource(R.string.color),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
@@ -681,14 +682,14 @@ private fun PenControls(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Pen Controls",
+            text = stringResource(R.string.tool_controls),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
 
         SliderControl(
-            label = "Width",
+            label = stringResource(R.string.width),
             value = penConfig.width,
             valueRange = 1f..50f,
             onValueChange = onStrokeWidthChange,
@@ -696,7 +697,7 @@ private fun PenControls(
         )
 
         SliderControl(
-            label = "Opacity",
+            label = stringResource(R.string.opacity),
             value = penConfig.alpha,
             valueRange = 0.1f..1f,
             onValueChange = onAlphaChange,
@@ -720,15 +721,15 @@ private fun ToolbarControls(
 //        modifier = Modifier.width(120.dp)
     ) {
         Text(
-            text = "Toolbar Controls",
+            text = stringResource(R.string.settings),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurface
         )
 
         val orientations = listOf(
-            ToolbarOrientation.HORIZONTAL to "Horizontal",
-            ToolbarOrientation.VERTICAL to "Vertical"
+            ToolbarOrientation.HORIZONTAL to stringResource(R.string.horizontal),
+            ToolbarOrientation.VERTICAL to stringResource(R.string.vertical)
         )
 
         orientations.forEach { (orientation, label) ->
@@ -759,13 +760,13 @@ private fun ToolbarControls(
         }
 
         CheckboxControl(
-            label = "Clear canvas on hidden",
+            label = stringResource(R.string.clear_canvas_on_hidden),
             isChecked = autoClearCanvas,
             onCheckedChange = onChangeAutoClearCanvas
         )
 
         CheckboxControl(
-            label = "Canvas visible on start",
+            label = stringResource(R.string.canvas_visible_on_start),
             isChecked = visibleOnStart,
             onCheckedChange = onChangeVisibleOnStart
         )
@@ -780,7 +781,7 @@ private fun ToolbarControls(
             shape = RoundedCornerShape(8.dp)
         ) {
             Text(
-                text = "Quit",
+                text = stringResource(R.string.quit),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -877,6 +878,7 @@ private fun CheckboxControl(
     }
 }
 
+@Composable
 private fun createAllToolbarButtons(
     uiState: UiState,
     canUndo: Boolean,
@@ -900,14 +902,14 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "visibility",
             icon = if (uiState.canvasVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-            contentDescription = if (uiState.canvasVisible) "Hide canvas" else "Show canvas",
+            contentDescription = if (uiState.canvasVisible) stringResource(R.string.hide_canvas) else stringResource(R.string.show_canvas),
             onClick = onCanvasVisibilityToggle
         ),
 
         ToolbarButton(
             id = "undo",
             icon = Icons.AutoMirrored.Filled.Undo,
-            contentDescription = "Undo",
+            contentDescription = stringResource(R.string.undo),
             isEnabled = uiState.canvasVisible && canUndo,
             onClick = onUndo
         ),
@@ -915,7 +917,7 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "clear",
             icon = Icons.Default.Delete,
-            contentDescription = "Clear canvas",
+            contentDescription = stringResource(R.string.clear_canvas),
             isEnabled = uiState.canvasVisible && canClearCanvas,
             onClick = onClearCanvas
         ),
@@ -926,7 +928,7 @@ private fun createAllToolbarButtons(
                 PenType.Pen -> Icons.Default.Edit
                 PenType.StrokeEraser -> Icons.Default.Delete
             },
-            contentDescription = "Tool controls",
+            contentDescription = stringResource(R.string.tool_controls),
             popupPages = listOf(
                 { PenTypeSelector(
                     currentPenType = uiState.currentPenType,
@@ -945,7 +947,7 @@ private fun createAllToolbarButtons(
             id = "color_picker",
             icon = Icons.Default.Palette,
             color = uiState.currentPenConfig.color,
-            contentDescription = "Color picker",
+            contentDescription = stringResource(R.string.color_picker),
             popupPages = listOf(
                 { ColorPicker(
                     selectedColor = uiState.currentPenConfig.color,
@@ -957,7 +959,7 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "passthrough",
             icon = if (uiState.canvasPassthrough) Icons.Default.DoNotTouch else Icons.Default.TouchApp,
-            contentDescription = "Toggle passthrough",
+            contentDescription = if (uiState.canvasPassthrough) stringResource(R.string.disable_passthrough) else stringResource(R.string.enable_passthrough),
             isEnabled = uiState.canvasVisible,
             onClick = onCanvasPassthroughToggle
         ),
@@ -965,7 +967,7 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "redo",
             icon = Icons.AutoMirrored.Filled.Redo,
-            contentDescription = "Redo",
+            contentDescription = stringResource(R.string.redo),
             isEnabled = uiState.canvasVisible && canRedo,
             onClick = onRedo
         ),
@@ -973,7 +975,7 @@ private fun createAllToolbarButtons(
         ToolbarButton(
             id = "settings",
             icon = Icons.Default.Tune,
-            contentDescription = "Settings",
+            contentDescription = stringResource(R.string.settings),
             popupPages = listOf(
                 { ToolbarControls(
                     currentOrientation = uiState.toolbarOrientation,
