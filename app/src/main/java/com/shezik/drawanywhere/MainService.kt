@@ -122,7 +122,7 @@ class MainService : Service() {
                 val targetAlpha = if (state.toolbarActive) 1.0f else 0.5f
                 toolbarView.animate()
                     .alpha(targetAlpha)
-                    .setDuration(500)  // Animate alpha change over 500 milliseconds
+                    .setDuration(300)  // Animate alpha change over 300 milliseconds
                     .start()
 
                 // Toolbar position
