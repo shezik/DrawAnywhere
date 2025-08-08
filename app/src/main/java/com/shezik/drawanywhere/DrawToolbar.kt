@@ -665,6 +665,8 @@ private fun ColorPicker(
                     }
                 }
             }
+            
+            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
