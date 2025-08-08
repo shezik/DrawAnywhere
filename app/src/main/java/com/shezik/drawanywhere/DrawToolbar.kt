@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.toArgb
@@ -36,6 +38,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -43,6 +46,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.shezik.drawanywhere.ui.theme.DrawAnywhereTheme
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 
 // TODO: Modifiers (esp. size) unification
 
@@ -789,6 +793,45 @@ private fun ToolbarControls(
 }
 
 @Composable
+fun AboutScreen() {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Image(
+            painter = painterResource(id = R.drawable.app_icon),
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier.size(72.dp),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+        )
+
+        Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+
+        Text(
+            text = stringResource(R.string.version_name),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.ExtraLight,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.about_text),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = FontWeight.Light,
+            textAlign = TextAlign.Center,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+    }
+}
+@Composable
 private fun SliderControl(
     label: String,
     value: Float,
@@ -985,7 +1028,8 @@ private fun createAllToolbarButtons(
                     visibleOnStart = uiState.visibleOnStart,
                     onChangeVisibleOnStart = onChangeVisibleOnStart,
                     onQuitApplication = onQuitApplication
-                ) }
+                ) },
+                { AboutScreen() }
             )
         )
     )

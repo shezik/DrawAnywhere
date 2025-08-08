@@ -28,4 +28,6 @@
     <string name="redo">重做</string>
     <string name="settings">设置</string>
     <string name="enable_passthrough">启用触摸透传</string>
+    <string name="version_name">1.0</string>
+    <string name="about_text">© 2025 shezik. 保留所有权利。\n\n应用图标来自 Solar Icons，遵循 CC BY 协议。</string>
 </resources>
