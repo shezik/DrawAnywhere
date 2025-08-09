@@ -14,10 +14,10 @@ fun distance(p1: Offset, p2: Offset): Float {
 }
 
 fun distancePointToLineSegment(p: Offset, a: Offset, b: Offset): Float {
-    val ap = Offset(p.x - a.x, p.y - a.y) // Vector from a to p
-    val ab = Offset(b.x - a.x, b.y - a.y) // Vector from a to b
+    val ap = Offset(p.x - a.x, p.y - a.y)  // Vector from a to p
+    val ab = Offset(b.x - a.x, b.y - a.y)  // Vector from a to b
 
-    val ab2 = ab.x.pow(2) + ab.y.pow(2)   // Squared length of segment ab
+    val ab2 = ab.x.pow(2) + ab.y.pow(2)  // Squared length of segment ab
 
     if (ab2 == 0f) {  // a and b are the same point
         return distance(p, a)

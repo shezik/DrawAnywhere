@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Redo
 import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -968,7 +969,7 @@ private fun createAllToolbarButtons(
 
         ToolbarButton(
             id = "clear",
-            icon = Icons.Default.Delete,
+            icon = if (canClearCanvas) Icons.Filled.Delete else Icons.Outlined.Delete,
             contentDescription = stringResource(R.string.clear_canvas),
             isEnabled = uiState.canvasVisible && canClearCanvas,
             onClick = onClearCanvas
