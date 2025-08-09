@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">DrawAnywhere</string>
     <string name="permission_required">需要权限</string>
-    <string name="overlay_permission_description">此应用需要悬浮窗权限来在其他应用上绘制画布。</string>
+    <string name="overlay_permission_description">此应用需要悬浮窗权限来将画布放置在其他应用上。</string>
     <string name="permission_accept">继续</string>
     <string name="permission_deny">退出</string>
     <string name="collapse_toolbar">收起工具栏</string>
@@ -15,7 +15,7 @@
     <string name="opacity">不透明度</string>
     <string name="horizontal">横向</string>
     <string name="vertical">竖向</string>
-    <string name="clear_canvas_on_hidden">隐藏画布时清空</string>
+    <string name="clear_on_hiding_canvas">隐藏画布时清空</string>
     <string name="canvas_visible_on_start">启动时显示画布</string>
     <string name="quit">退出</string>
     <string name="hide_canvas">隐藏画布</string>
@@ -28,6 +28,6 @@
     <string name="redo">重做</string>
     <string name="settings">设置</string>
     <string name="enable_passthrough">启用触摸透传</string>
-    <string name="copyright">© 2025 shezik. 保留所有权利。</string>
-    <string name="licenses">应用图标来自 Solar Icons，遵循 CC BY 协议。</string>
+    <string name="copyright">© 2025 shezik, 采用 AGPLv3 协议或其更高版本授权。</string>
+    <string name="licenses">应用图标来自 Solar Icons, 采用 CC BY 4.0 协议授权。</string>
 </resources>

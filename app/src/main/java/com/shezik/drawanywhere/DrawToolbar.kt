@@ -761,7 +761,7 @@ private fun ToolbarControls(
         }
 
         CheckboxControl(
-            label = stringResource(R.string.clear_canvas_on_hidden),
+            label = stringResource(R.string.clear_on_hiding_canvas),
             isChecked = autoClearCanvas,
             onCheckedChange = onChangeAutoClearCanvas
         )

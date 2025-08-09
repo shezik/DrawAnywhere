@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">DrawAnywhere</string>
     <string name="permission_required">Permission Required</string>
-    <string name="overlay_permission_description">This application needs overlay permission to draw the canvas on top of other apps.</string>
+    <string name="overlay_permission_description">This application needs overlay permission to place the canvas on top of other apps.</string>
     <string name="permission_accept">Proceed</string>
     <string name="permission_deny">Exit</string>
     <string name="collapse_toolbar">Collapse toolbar</string>
@@ -14,7 +14,7 @@
     <string name="opacity">Opacity</string>
     <string name="horizontal">Horizontal</string>
     <string name="vertical">Vertical</string>
-    <string name="clear_canvas_on_hidden">Clear on canvas hidden</string>
+    <string name="clear_on_hiding_canvas">Clear on hiding canvas</string>
     <string name="canvas_visible_on_start">Canvas visible on start</string>
     <string name="quit">Quit</string>
     <string name="hide_canvas">Hide canvas</string>
@@ -27,6 +27,6 @@
     <string name="redo">Redo</string>
     <string name="settings">Settings</string>
     <string name="enable_passthrough">Enable passthrough</string>
-    <string name="copyright">© 2025 shezik. All rights reserved.</string>
-    <string name="licenses" >App icon by Solar Icons in CC BY License.</string>
+    <string name="copyright">© 2025 shezik, licensed under AGPLv3 or any later version.</string>
+    <string name="licenses" >App icon by Solar Icons, licensed under CC BY 4.0.</string>
 </resources>
