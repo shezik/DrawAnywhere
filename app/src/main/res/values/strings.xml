@@ -27,6 +27,6 @@
     <string name="redo">Redo</string>
     <string name="settings">Settings</string>
     <string name="enable_passthrough">Enable passthrough</string>
-    <string name="version_name">1.0</string>
-    <string name="about_text">© 2025 shezik. All rights reserved.\n\nApp icon by Solar Icons in CC BY License.</string>
+    <string name="copyright">© 2025 shezik. All rights reserved.</string>
+    <string name="licenses" >App icon by Solar Icons in CC BY License.</string>
 </resources>

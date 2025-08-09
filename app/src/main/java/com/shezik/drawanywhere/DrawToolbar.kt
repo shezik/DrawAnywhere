@@ -801,7 +801,7 @@ fun AboutScreen() {
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Image(
                 painter = painterResource(id = R.drawable.app_icon),
@@ -818,16 +818,26 @@ fun AboutScreen() {
             )
 
             Text(
-                text = stringResource(R.string.version_name),
+                text = "${BuildConfig.VERSION_NAME} ${if (BuildConfig.DEBUG) "(D)" else ""}, ${BuildConfig.COMMIT_HASH}",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.ExtraLight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = stringResource(R.string.about_text),
+                text = stringResource(R.string.copyright),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.Light,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Text(
+                text = stringResource(R.string.licenses),
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Light,
                 textAlign = TextAlign.Center,
@@ -836,6 +846,7 @@ fun AboutScreen() {
         }
     }
 }
+
 @Composable
 private fun SliderControl(
     label: String,
