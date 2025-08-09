@@ -16,7 +16,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class ServiceState(
+    // Saved
     val toolbarPosition: Offset = Offset(32f, 64f),
+
+    // Not saved
+    val positionValidated: Boolean = false,
     val toolbarActive: Boolean = true
 )
 
@@ -216,8 +220,11 @@ class DrawViewModel(
 
 
 
+    fun setToolbarPosition(position: Offset, validated: Boolean = false) =
+        _serviceState.update { it.copy(toolbarPosition = position, positionValidated = validated) }
+
     fun updateToolbarPosition(offset: Offset) =
-        _serviceState.update { it.copy(toolbarPosition = serviceState.value.toolbarPosition + offset) }
+        setToolbarPosition(serviceState.value.toolbarPosition + offset)
 
     fun saveToolbarPosition() = viewModelScope.launch {
         // THERE'S A LOTTA CONCURRENCY GOING ON HERE, BEWARE!

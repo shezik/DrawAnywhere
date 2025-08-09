@@ -7,6 +7,8 @@ import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
+import android.graphics.Point
+import android.os.Build
 import android.os.IBinder
 import android.view.Gravity
 import android.view.View
@@ -22,6 +24,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import android.view.WindowManager.LayoutParams
+import android.view.WindowInsets
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.round
 import androidx.core.app.ServiceCompat
 
@@ -46,7 +50,7 @@ class MainService : Service() {
 
         preferencesMgr = PreferencesManager(this)
         val (initialUiState, initialServiceState) = runBlocking {
-            Pair(preferencesMgr.getSavedUiState(), preferencesMgr.getSavedServiceState())
+            preferencesMgr.getSavedUiState() to preferencesMgr.getSavedServiceState()
         }
         viewModel = DrawViewModel(
             controller = drawController,
@@ -111,7 +115,7 @@ class MainService : Service() {
         toolbarParams.gravity = Gravity.TOP or
                 Gravity.START
 
-        handleToolbarPosition(toolbarParams, initialServiceState)
+        handleToolbarPosition(toolbarParams, initialServiceState, windowManager, toolbarView, viewModel)
         // -------------------------------
 
         windowManager.addView(canvasView, canvasParams)
@@ -129,7 +133,7 @@ class MainService : Service() {
 
         serviceStateJob = CoroutineScope(Dispatchers.Main).launch {
             viewModel.serviceState.collect { state ->
-                handleToolbarPosition(toolbarParams, state)
+                handleToolbarPosition(toolbarParams, state, windowManager, toolbarView, viewModel)
                 windowManager.updateViewLayout(toolbarView, toolbarParams)
 
                 val targetAlpha = if (state.toolbarActive) 1.0f else 0.5f
@@ -153,12 +157,41 @@ class MainService : Service() {
 
     private fun handleToolbarPosition(
         toolbarParams: LayoutParams,
-        state: ServiceState
+        state: ServiceState,
+        windowManager: WindowManager,
+        toolbarView: View,
+        viewModel: DrawViewModel
     ) {
         val rounded = state.toolbarPosition.round()
-        toolbarParams.x = rounded.x
-        toolbarParams.y = rounded.y
+
+        if (state.positionValidated) {
+            toolbarParams.x = rounded.x
+            toolbarParams.y = rounded.y
+        } else {
+            val (screenWidth, screenHeight) = getUsableScreenSize(windowManager)
+            val coercedX = rounded.x.coerceIn(0, screenWidth - toolbarView.width)
+            val coercedY = rounded.y.coerceIn(0, screenHeight - toolbarView.height)
+            viewModel.setToolbarPosition(Offset(coercedX.toFloat(), coercedY.toFloat()), true)
+        }
     }
+
+    @Suppress("DEPRECATION")
+    private fun getUsableScreenSize(windowManager: WindowManager): Pair<Int, Int> =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = windowManager.maximumWindowMetrics
+            val insets = windowMetrics.windowInsets.getInsets(
+                WindowInsets.Type.navigationBars()
+            )
+            val bounds = windowMetrics.bounds
+            val usableWidth = bounds.width() - insets.left - insets.right
+            val usableHeight = bounds.height() - insets.top - insets.bottom
+            usableWidth to usableHeight
+        } else {
+            val display = windowManager.defaultDisplay
+            val size = Point()
+            display.getSize(size)
+            size.x to size.y
+        }
 
     override fun onDestroy() {
         super.onDestroy()

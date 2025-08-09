@@ -380,8 +380,8 @@ private fun ToolbarExpandButton(
 ) {
     val targetAngles =
         when (orientation) {
-            ToolbarOrientation.HORIZONTAL -> Pair(180f, 0f)
-            ToolbarOrientation.VERTICAL -> Pair(270f, 90f)
+            ToolbarOrientation.HORIZONTAL -> 180f to 0f
+            ToolbarOrientation.VERTICAL -> 270f to 90f
         }
 
     val rotationAngle by animateFloatAsState(
