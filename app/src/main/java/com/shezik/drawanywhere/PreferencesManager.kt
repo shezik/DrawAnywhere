@@ -75,10 +75,6 @@ class PreferencesManager(private val context: Context) {
         return UiState(
             currentPenType = currentPenType,
             penConfigs = penConfigs,
-            toolbarPosition = Offset(
-                x = preferences[PreferencesKeys.TOOLBAR_POSITION_X] ?: defaultUiState.toolbarPosition.x,
-                y = preferences[PreferencesKeys.TOOLBAR_POSITION_Y] ?: defaultUiState.toolbarPosition.y
-            ),
             toolbarOrientation = getEnumValueOrDefault<ToolbarOrientation>(
                 preferences[PreferencesKeys.TOOLBAR_ORIENTATION],
                 defaultUiState.toolbarOrientation),
@@ -93,8 +89,6 @@ class PreferencesManager(private val context: Context) {
     suspend fun saveUiState(uiState: UiState) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.CURRENT_PEN_TYPE] = uiState.currentPenType.name
-            preferences[PreferencesKeys.TOOLBAR_POSITION_X] = uiState.toolbarPosition.x
-            preferences[PreferencesKeys.TOOLBAR_POSITION_Y] = uiState.toolbarPosition.y
             preferences[PreferencesKeys.TOOLBAR_ORIENTATION] = uiState.toolbarOrientation.name
             preferences[PreferencesKeys.AUTO_CLEAR_CANVAS] = uiState.autoClearCanvas
             preferences[PreferencesKeys.VISIBLE_ON_START] = uiState.visibleOnStart
@@ -105,6 +99,25 @@ class PreferencesManager(private val context: Context) {
                 preferences[PreferencesKeys.penWidthKey(penType)] = config.width
                 preferences[PreferencesKeys.penAlphaKey(penType)] = config.alpha
             }
+        }
+    }
+
+    suspend fun getSavedServiceState(): ServiceState {
+        val preferences = context.dataStore.data.first()
+        val defaultServiceState = ServiceState()
+
+        return ServiceState(
+            toolbarPosition = Offset(
+                x = preferences[PreferencesKeys.TOOLBAR_POSITION_X] ?: defaultServiceState.toolbarPosition.x,
+                y = preferences[PreferencesKeys.TOOLBAR_POSITION_Y] ?: defaultServiceState.toolbarPosition.y
+            )
+        )
+    }
+
+    suspend fun saveServiceState(serviceState: ServiceState) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.TOOLBAR_POSITION_X] = serviceState.toolbarPosition.x
+            preferences[PreferencesKeys.TOOLBAR_POSITION_Y] = serviceState.toolbarPosition.y
         }
     }
 }

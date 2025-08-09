@@ -119,7 +119,7 @@ fun DrawToolbar(
                     .padding(4.dp),
                 uiState = uiState,
                 haptics = haptics,
-                onPositionChange = viewModel::setToolbarPosition,
+                onPositionChange = viewModel::updateToolbarPosition,
                 onPositionSaved = viewModel::saveToolbarPosition,
                 onToolbarInteracted = viewModel::resetToolbarTimer
             ) {
@@ -144,12 +144,6 @@ private fun DraggableToolbarCard(
     onToolbarInteracted: () -> Unit,
     content: @Composable () -> Unit
 ) {
-    var currentPosition by remember { mutableStateOf(uiState.toolbarPosition) }
-
-    LaunchedEffect(uiState.toolbarPosition) {
-        currentPosition = uiState.toolbarPosition
-    }
-
     Card(
         modifier = modifier
             .pointerInput(Unit) {
@@ -167,8 +161,7 @@ private fun DraggableToolbarCard(
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
-                        currentPosition += dragAmount
-                        onPositionChange(currentPosition)
+                        onPositionChange(dragAmount)
                     },
                     onDragEnd = {
                         onPositionSaved()

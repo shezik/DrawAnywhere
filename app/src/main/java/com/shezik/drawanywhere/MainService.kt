@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import android.view.WindowManager.LayoutParams
+import androidx.compose.ui.unit.round
 import androidx.core.app.ServiceCompat
 
 class MainService : Service() {
@@ -38,18 +39,20 @@ class MainService : Service() {
     private lateinit var preferencesMgr: PreferencesManager
     private lateinit var viewModel: DrawViewModel
     private var uiStateJob: Job? = null
+    private var serviceStateJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
 
         preferencesMgr = PreferencesManager(this)
-        val initialUiState = runBlocking {
-            preferencesMgr.getSavedUiState()
+        val (initialUiState, initialServiceState) = runBlocking {
+            Pair(preferencesMgr.getSavedUiState(), preferencesMgr.getSavedServiceState())
         }
         viewModel = DrawViewModel(
             controller = drawController,
             preferencesMgr = preferencesMgr,
             initialUiState = initialUiState,
+            initialServiceState = initialServiceState,
             stopService = { stopSelf() }
         )
 
@@ -83,6 +86,8 @@ class MainService : Service() {
                     LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
+
+        handleCanvasPassthrough(canvasParams, initialUiState)
         // ------------------------------
 
         // -------- Setup toolbar --------
@@ -105,49 +110,60 @@ class MainService : Service() {
         )
         toolbarParams.gravity = Gravity.TOP or
                 Gravity.START
+
+        handleToolbarPosition(toolbarParams, initialServiceState)
         // -------------------------------
 
-        handleLayoutParams(canvasParams, toolbarParams, initialUiState)
         windowManager.addView(canvasView, canvasParams)
         windowManager.addView(toolbarView, toolbarParams)
 
         uiStateJob = CoroutineScope(Dispatchers.Main).launch {
             viewModel.uiState.collect { state ->
-                handleLayoutParams(canvasParams, toolbarParams, state)
+                handleCanvasPassthrough(canvasParams, state)
                 windowManager.updateViewLayout(canvasView, canvasParams)
-                windowManager.updateViewLayout(toolbarView, toolbarParams)
 
                 canvasView.visibility = if (state.canvasVisible)
                     View.VISIBLE else View.GONE
+            }
+        }
+
+        serviceStateJob = CoroutineScope(Dispatchers.Main).launch {
+            viewModel.serviceState.collect { state ->
+                handleToolbarPosition(toolbarParams, state)
+                windowManager.updateViewLayout(toolbarView, toolbarParams)
 
                 val targetAlpha = if (state.toolbarActive) 1.0f else 0.5f
                 toolbarView.animate()
                     .alpha(targetAlpha)
-                    .setDuration(300)  // Animate alpha change over 300 milliseconds
+                    .setDuration(300)  // Animate alpha change over milliseconds
                     .start()
             }
         }
     }
 
-    private fun handleLayoutParams(
+    private fun handleCanvasPassthrough(
         canvasParams: LayoutParams,
-        toolbarParams: LayoutParams,
         state: UiState
     ) {
-        // Canvas visibility and touch passthrough
         canvasParams.flags = if (state.canvasPassthrough)
             canvasParams.flags or LayoutParams.FLAG_NOT_TOUCHABLE
         else
             canvasParams.flags and LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+    }
 
-        // Toolbar position
-        toolbarParams.x = state.toolbarPosition.x.toInt()
-        toolbarParams.y = state.toolbarPosition.y.toInt()
+    private fun handleToolbarPosition(
+        toolbarParams: LayoutParams,
+        state: ServiceState
+    ) {
+        val rounded = state.toolbarPosition.round()
+        toolbarParams.x = rounded.x
+        toolbarParams.y = rounded.y
     }
 
     override fun onDestroy() {
         super.onDestroy()
         uiStateJob?.cancel()
+        serviceStateJob?.cancel()
         if (::toolbarView.isInitialized && toolbarView.isAttachedToWindow)
             windowManager.removeView(toolbarView)
         if (::canvasView.isInitialized && canvasView.isAttachedToWindow)

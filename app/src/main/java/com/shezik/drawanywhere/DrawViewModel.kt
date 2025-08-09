@@ -10,22 +10,26 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class ServiceState(
+    val toolbarPosition: Offset = Offset(32f, 64f),
+    val toolbarActive: Boolean = true
+)
+
 data class UiState(
     val canvasVisible: Boolean = true,  // Overridden on start by visibleOnStart in PreferencesManager
     val canvasPassthrough: Boolean = false,
+    val autoClearCanvas: Boolean = false,
+    val visibleOnStart: Boolean = true,
+
     val currentPenType: PenType = PenType.Pen,  // This could be morphed into pen IDs later, if multiple pens with the same type is desired.
     val penConfigs: Map<PenType, PenConfig> = defaultPenConfigs(),
 
-    val toolbarActive: Boolean = true,
-    val toolbarPosition: Offset = Offset(0f, 0f),
     val toolbarOrientation: ToolbarOrientation = ToolbarOrientation.HORIZONTAL,
-
     val firstDrawerOpen: Boolean = canvasVisible,
     val secondDrawerOpen: Boolean = false,
 
@@ -38,10 +42,7 @@ data class UiState(
         "passthrough", "redo", "settings"
     ),
     // Buttons that stay in second drawer but do not collapse
-    val secondDrawerPinnedButtons: Set<String> = emptySet(),
-
-    val autoClearCanvas: Boolean = false,
-    val visibleOnStart: Boolean = true
+    val secondDrawerPinnedButtons: Set<String> = emptySet()
 ) {
     val currentPenConfig: PenConfig
         // New PenConfig is not added until modified
@@ -60,10 +61,14 @@ class DrawViewModel(
     private val controller: DrawController,
     private val preferencesMgr: PreferencesManager,
     initialUiState: UiState,
+    initialServiceState: ServiceState,
     private val stopService: () -> Unit
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(initialUiState)
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private val _serviceState = MutableStateFlow(initialServiceState)
+    val serviceState: StateFlow<ServiceState> = _serviceState.asStateFlow()
 
     val canUndo: StateFlow<Boolean> = controller.canUndo
     val canRedo: StateFlow<Boolean> = controller.canRedo
@@ -73,13 +78,16 @@ class DrawViewModel(
         controller.setPenConfig(initialUiState.currentPenConfig)
 
         _uiState
-            .debounce(500L)
-            .onEach { state -> preferencesMgr.saveUiState(state) }
+            .onEach { state ->
+                preferencesMgr.saveUiState(state)
+            }
             .launchIn(viewModelScope)
 
         _uiState
-            .onEach { state -> controller.setPenConfig(state.currentPenConfig) }  // TODO: BOMBARDED? AAA I SHOULDN'T HAVE IMPLEMENTED DRAGGING THIS WAY
-            // TODO: Should we move pinned buttons logic here?
+            .onEach { state ->
+                // TODO: Should we move pinned buttons logic here?
+                controller.setPenConfig(state.currentPenConfig)
+            }
             .launchIn(viewModelScope)
 
         resetToolbarTimer()
@@ -208,11 +216,13 @@ class DrawViewModel(
 
 
 
-    fun setToolbarPosition(position: Offset) =
-        _uiState.update { it.copy(toolbarPosition = position) }
+    fun updateToolbarPosition(offset: Offset) =
+        _serviceState.update { it.copy(toolbarPosition = serviceState.value.toolbarPosition + offset) }
 
-    fun saveToolbarPosition() {
-        // TODO: Pending removal?
+    fun saveToolbarPosition() = viewModelScope.launch {
+        // THERE'S A LOTTA CONCURRENCY GOING ON HERE, BEWARE!
+        // We should be fine (FOR NOW) since the only value saved is toolbar position
+        preferencesMgr.saveServiceState(serviceState.value)
     }
 
 
@@ -235,7 +245,7 @@ class DrawViewModel(
     }
 
     fun setToolbarActive(state: Boolean) =
-        _uiState.update { it.copy(toolbarActive = state) }
+        _serviceState.update { it.copy(toolbarActive = state) }
 
 
 
@@ -296,6 +306,7 @@ class DrawViewModel(
     fun quitApplication() {
         viewModelScope.launch {
             preferencesMgr.saveUiState(uiState.value)
+            preferencesMgr.saveServiceState(serviceState.value)
             stopService()
         }
     }
