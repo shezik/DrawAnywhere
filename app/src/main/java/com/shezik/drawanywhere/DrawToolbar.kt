@@ -811,13 +811,13 @@ fun AboutScreen() {
             )
 
             Text(
-                text = "${BuildConfig.VERSION_NAME} ${if (BuildConfig.DEBUG) "(D)" else ""}, ${BuildConfig.COMMIT_HASH}",
+                text = "${BuildConfig.VERSION_NAME}${if (BuildConfig.DEBUG) "-dev" else ""}, ${BuildConfig.COMMIT_HASH}",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.ExtraLight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = stringResource(R.string.copyright),
@@ -827,7 +827,7 @@ fun AboutScreen() {
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = stringResource(R.string.licenses),
