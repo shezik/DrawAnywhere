@@ -79,7 +79,7 @@ class MainService : Service() {
             LayoutParams.TYPE_APPLICATION_OVERLAY,
             LayoutParams.FLAG_NOT_FOCUSABLE or
                     LayoutParams.FLAG_NOT_TOUCH_MODAL or
-                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+//                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
                     LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
@@ -98,9 +98,9 @@ class MainService : Service() {
             LayoutParams.WRAP_CONTENT,
             LayoutParams.TYPE_APPLICATION_OVERLAY,
             LayoutParams.FLAG_NOT_FOCUSABLE or
-                    LayoutParams.FLAG_NOT_TOUCH_MODAL or  // TODO: ?
-                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-                    LayoutParams.FLAG_LAYOUT_IN_SCREEN,   // TODO: ?
+                    LayoutParams.FLAG_NOT_TOUCH_MODAL or
+//                    LayoutParams.FLAG_LAYOUT_NO_LIMITS or
+                    LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         )
         toolbarParams.gravity = Gravity.TOP or
@@ -129,7 +129,7 @@ class MainService : Service() {
         }
     }
 
-    fun handleLayoutParams(
+    private fun handleLayoutParams(
         canvasParams: LayoutParams,
         toolbarParams: LayoutParams,
         state: UiState
