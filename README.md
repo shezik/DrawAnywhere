@@ -1,5 +1,7 @@
 # <image src="SVG Icon/pen-new-square-original.svg" style="width: 2em; height: 2em; vertical-align: middle;" /> DrawAnywhere
 
+English | [中文](README-zh-CN.md)
+
 DrawAnywhere is an Android application that enables you to draw over other apps.
 
 ![](docs/title.png)
@@ -14,7 +16,7 @@ DrawAnywhere is an Android application that enables you to draw over other apps.
 ## ✨ Tips
 - Long press and drag to move the toolbar around.
 - After 3 seconds of inactivity, the toolbar becomes 50% transparent.
-- Turn on `Clear on canvas hidden` to let the app clear the canvas when you hide the canvas.<br>
+- Turn on `Clear on hiding canvas` to let the app clear the canvas when you hide it.<br>
 Note: Touch passthrough will be turned off automatically as well.
 - Turn off `Canvas visible on start` to hide the canvas on startup by default.
 
