@@ -5,12 +5,10 @@ DrawAnywhere 让你可以在任何界面上进行绘画、标注和高亮。非�
     <li>操作画布下方的其他软件</li>
     <li>50 步撤销/重做</li>
     <li>低存储空间占用</li></ul>
-
 使用技巧：
 <ul><li>长按并拖动来移动工具栏。</li>
     <li>工具栏空闲 3 秒后变得透明。</li>
     <li>启用<tt>隐藏画布时清空</tt>来在隐藏画布时将其清空。<br>
 提示：触摸透传也会被自动禁用。</li>
     <li>禁用<tt>启动时显示画布</tt>来在软件启动时默认隐藏画布。</li></ul>
-
 源代码可在 GitHub 上获取：<a href="https://github.com/shezik/DrawAnywhere">https://github.com/shezik/DrawAnywhere</a>
