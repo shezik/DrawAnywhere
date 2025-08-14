@@ -4,7 +4,7 @@
 
 DrawAnywhere 是一个可以让你在屏幕的任意地方上绘图的安卓软件。
 
-![](docs/title.png)
+![](metadata/zh-CN/images/featureGraphic.png)
 
 ## 🎨 功能
 - 基于 Jetpack Compose 的漂亮工具栏，支持横向和竖向布局

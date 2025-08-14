@@ -1,0 +1,16 @@
+DrawAnywhere lets you sketch, annotate, and highlight directly on top of any screen. Great for following along video courses, recording tutorials or hosting presentations.
+
+Highlights:
+<ul><li>Stroke eraser toggleable via stylus buttons</li>
+    <li>Touch passthrough to the app below</li>
+    <li>50-step undo/redo operations</li>
+    <li>Minimal storage usage</li></ul>
+
+Tips:
+<ul><li>Long press and drag to move the toolbar around.</li>
+    <li>After 3 seconds of inactivity, the toolbar becomes more transparent.</li>
+    <li>Turn on <tt>Clear on hiding canvas</tt> to let the app clear the canvas when you hide it.<br>
+Note: Touch passthrough will be turned off automatically as well.</li>
+    <li>Turn off <tt>Canvas visible on start</tt> to hide the canvas on startup by default.</li></ul>
+
+Source is available on GitHub: <a href="https://github.com/shezik/DrawAnywhere">https://github.com/shezik/DrawAnywhere</a>

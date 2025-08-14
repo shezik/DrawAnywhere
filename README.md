@@ -4,7 +4,7 @@ English | [中文](README-zh-CN.md)
 
 DrawAnywhere is an Android application that lets you draw on top of other apps.
 
-![](docs/title.png)
+![](metadata/en-US/images/featureGraphic.png)
 
 ## 🎨 Features
 - Pretty toolbar UI based on Jetpack Compose, available in both horizontal and vertical mode
