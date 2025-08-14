@@ -2,7 +2,7 @@
 
 English | [中文](README-zh-CN.md)
 
-DrawAnywhere is an Android application that enables you to draw over other apps.
+DrawAnywhere is an Android application that lets you draw on top of other apps.
 
 ![](docs/title.png)
 
