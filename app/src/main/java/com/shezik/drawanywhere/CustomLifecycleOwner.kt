@@ -1,7 +1,7 @@
-package com.shezik.drawanywhere
-
 // Credits: Mauro Banze & Yannick @ https://stackoverflow.com/a/66958772 & https://stackoverflow.com/a/65760080
 // This file is a modified version of the original. licensed under CC BY-SA 4.0.
+
+package com.shezik.drawanywhere
 
 import android.view.View
 import androidx.lifecycle.Lifecycle
