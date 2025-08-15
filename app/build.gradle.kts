@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import java.io.ByteArrayOutputStream
 
 plugins {
     alias(libs.plugins.android.application)
@@ -19,8 +18,6 @@ android {
         versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        buildConfigField("String", "COMMIT_HASH", "\"${getCommitHash()}\"")
     }
 
     buildTypes {
@@ -85,15 +82,4 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.savedstate)
     implementation(libs.kotlinx.coroutines.core)
-}
-
-fun getCommitHash(): String {
-    val projectDir = File(project.rootDir.absolutePath)
-    val result = ByteArrayOutputStream()
-    project.exec {
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        workingDir(projectDir)
-        standardOutput = result
-    }
-    return result.toString().trim()
 }

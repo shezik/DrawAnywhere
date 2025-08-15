@@ -828,7 +828,7 @@ fun AboutScreen() {
             )
 
             Text(
-                text = "${BuildConfig.VERSION_NAME}${if (BuildConfig.DEBUG) "-dev" else ""}, ${BuildConfig.COMMIT_HASH}",
+                text = "${BuildConfig.VERSION_NAME}${if (BuildConfig.DEBUG) "-dev" else ""} (${BuildConfig.VERSION_CODE})",
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.ExtraLight,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
