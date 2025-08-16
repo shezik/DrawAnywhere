@@ -1,1 +1,3 @@
-升级依赖。
+升级依赖项。
+使用 VERSION_CODE 替换“关于”页面中的 Commit Hash.
+可重复构建。

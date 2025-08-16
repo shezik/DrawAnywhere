@@ -30,6 +30,7 @@ android {
             )
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -39,9 +40,16 @@ android {
             jvmTarget.set(JvmTarget.JVM_11)
         }
     }
+
     buildFeatures {
         buildConfig = true
         compose = true
+    }
+
+    // Disable extra signing block 'Dependency metadata'
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 }
 
@@ -82,4 +90,11 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.savedstate)
     implementation(libs.kotlinx.coroutines.core)
+}
+
+// Disable baseline.prof for reproducibility
+tasks.whenTaskAdded {
+    if (name.contains("ArtProfile")) {
+        enabled = false
+    }
 }

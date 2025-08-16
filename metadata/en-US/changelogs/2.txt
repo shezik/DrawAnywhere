@@ -1,1 +1,3 @@
 Update dependencies.
+Replace latest commit hash with version code in the About page.
+Reproducible building.
