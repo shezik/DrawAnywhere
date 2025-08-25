@@ -4,6 +4,12 @@ English | [中文](README-zh-CN.md)
 
 DrawAnywhere is an Android application that lets you draw on top of other apps.
 
+[<img src="https://f-droid.org/badge/get-it-on.png"
+     alt="Get it on F-Droid"
+     height="80">](https://f-droid.org/packages/com.shezik.drawanywhere/)
+
+Or download the latest APK from the [Releases Section](https://github.com/shezik/DrawAnywhere/releases/latest).
+
 ![](metadata/en-US/images/featureGraphic.png)
 
 ## 🎨 Features
