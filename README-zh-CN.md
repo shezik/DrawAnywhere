@@ -6,6 +6,13 @@ DrawAnywhere 是一个可以让你在屏幕的任意地方上绘图的安卓软�
 
 ![](metadata/zh-CN/images/featureGraphic.png)
 
+[<img src="https://img.shields.io/f-droid/v/com.shezik.drawanywhere"
+      alt="Get it on F-Droid">](https://f-droid.org/packages/com.shezik.drawanywhere/)
+[<img src="https://shields.rbtlog.dev/simple/builders/com.shezik.drawanywhere"
+      alt="RB shield">](https://shields.rbtlog.dev/com.shezik.drawanywhere)
+
+也可以在 [Releases 页面](https://github.com/shezik/DrawAnywhere/releases/latest) 下载最新 APK.
+
 ## 🎨 功能
 - 基于 Jetpack Compose 的漂亮工具栏，支持横向和竖向布局
 - 笔画橡皮，可由手写笔按钮激活
