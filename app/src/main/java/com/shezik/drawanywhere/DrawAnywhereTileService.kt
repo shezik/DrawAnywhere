@@ -1,9 +1,12 @@
 package com.shezik.drawanywhere
 
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.provider.Settings
+import android.app.PendingIntent
 
 class DrawAnywhereTileService: TileService(){
 
@@ -18,12 +21,19 @@ class DrawAnywhereTileService: TileService(){
             if (!Settings.canDrawOverlays(this)) {
                 val permissionIntent = Intent(this, MainActivity::class.java)
                 permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                startActivityAndCollapse(permissionIntent)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                    val pendingIntent = PendingIntent.getActivity(this, 0, permissionIntent, PendingIntent.FLAG_IMMUTABLE)
+                    pendingIntent?.let { startActivityAndCollapse(it) }
+                } else {
+                    @SuppressLint("StartActivityAndCollapseDeprecated")
+                    startActivityAndCollapse(permissionIntent)
+                }
+
                 return
-            } else {
-                startForegroundService(serviceIntent)
-                qsTile.state = Tile.STATE_ACTIVE
             }
+            startForegroundService(serviceIntent)
+            qsTile.state = Tile.STATE_ACTIVE
         }
 
         qsTile.updateTile()
