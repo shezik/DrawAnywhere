@@ -17,6 +17,7 @@ Or download the latest APK from the [Releases Section](https://github.com/shezik
 - Pretty toolbar UI based on Jetpack Compose, available in both horizontal and vertical mode
 - Stroke eraser, can be activated via stylus buttons
 - Undo and redo up to 50 operations
+- Quick Settings Tile to toggle DrawAnywhere service
 - Hide canvas, or pass down touch events to the app below
 - It's free ~~real estate~~ software!
 
